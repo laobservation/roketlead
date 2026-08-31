@@ -84,12 +84,12 @@ export const translations = {
 
     // Testimonials
     'testi.badge': 'Témoignages',
-    'testi.title': 'Ils développent leurs ventes et commissions avec RoketLead',
+    'testi.title': 'Ce que disent nos partenaires',
 
     // Contact Section & Modal
     'contact.badge': 'Contact & Support',
-    'contact.title': 'Une question ? Notre équipe à Casablanca vous accompagne',
-    'contact.subtitle': 'Que vous soyez un vendeur souhaitant lancer son canal d’affiliation ou un promoteur voulant monétiser son audience, nous sommes à votre écoute.',
+    'contact.title': 'Une question ? Contactez-nous',
+    'contact.subtitle': 'Notre équipe à Casablanca vous accompagne pour lancer ou optimiser votre affiliation.',
     'contact.name': 'Nom complet',
     'contact.email': 'Adresse email professionnelle',
     'contact.phone': 'Numéro de téléphone / WhatsApp',
@@ -247,12 +247,12 @@ export const translations = {
 
     // Testimonials
     'testi.badge': 'آراء الشركاء',
-    'testi.title': 'بائعون ومسوقون يضاعفون مبيعاتهم مع روكيت ليد',
+    'testi.title': 'ماذا يقول شركاؤنا',
 
     // Contact Section & Modal
-    'contact.badge': 'اتصل بنا والدعم الفني',
-    'contact.title': 'هل لديك استفسار؟ فريقنا في الدار البيضاء رهن إشارتك',
-    'contact.subtitle': 'سواء كنت بائعاً ترغب في إطلاق برنامج الإحالة لمتجرك أو مسوقاً تبحث عن عروض مميزة للترويج، نحن هنا لدعمك.',
+    'contact.badge': 'اتصل بنا والدعم',
+    'contact.title': 'هل لديك استفسار؟ تواصل معنا',
+    'contact.subtitle': 'فريقنا في الدار البيضاء رهن إشارتك لمساعدتك في إطلاق أو تنمية برنامج الإحالة لمتجرك.',
     'contact.name': 'الاسم الكامل',
     'contact.email': 'البريد الإلكتروني للعمل',
     'contact.phone': 'رقم الهاتف / واتساب',

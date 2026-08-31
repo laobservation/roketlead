@@ -31,6 +31,8 @@ import { MerchantProfile } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 
 interface LandingPageProps {
+  onStartSeller?: () => void;
+  onStartPromoter?: () => void;
   onNavigateToAffiliate: () => void;
   onNavigateToAdmin: () => void;
   onNavigateToMerchant?: () => void;
@@ -38,6 +40,8 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ 
+  onStartSeller,
+  onStartPromoter,
   onNavigateToAffiliate, 
   onNavigateToAdmin,
   onNavigateToMerchant,
@@ -139,19 +143,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </p>
 
           {/* Main Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-14 sm:mb-16">
             <button
               id="hero-start-seller-btn"
-              onClick={onNavigateToMerchant || onNavigateToAffiliate}
-              className="w-full sm:w-auto px-8 py-3.5 text-base font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-98 rounded-full shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center gap-2"
+              onClick={onStartSeller || onNavigateToMerchant || onNavigateToAffiliate}
+              className="w-full sm:w-auto px-7 sm:px-8 py-3.5 text-sm sm:text-base font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-98 rounded-full shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <span>{t('hero.ctaSeller')}</span>
               <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
             </button>
             <button
               id="hero-start-promoter-btn"
-              onClick={onNavigateToAffiliate}
-              className="w-full sm:w-auto px-8 py-3.5 text-base font-bold text-slate-800 bg-white hover:bg-slate-50 active:scale-98 border border-slate-200/90 rounded-full shadow-xs transition-all cursor-pointer flex items-center justify-center gap-2"
+              onClick={onStartPromoter || onNavigateToAffiliate}
+              className="w-full sm:w-auto px-7 sm:px-8 py-3.5 text-sm sm:text-base font-bold text-slate-800 bg-white hover:bg-slate-50 active:scale-98 border border-slate-200/90 rounded-full shadow-xs transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <TrendingUp className="w-4 h-4 text-emerald-600" />
               <span>{t('hero.ctaPromoter')}</span>
@@ -933,9 +937,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             
             {/* Big bold typography roketlead. */}
             <div className="max-w-sm">
-              <div className="text-5xl font-black tracking-tighter text-slate-950 mb-3">
+              <div className="text-4xl sm:text-5xl font-black tracking-tighter text-slate-950 mb-3">
                 roketlead<span className="text-blue-600">.</span>
-                <span className="text-sm font-bold text-blue-600 ml-1.5">MA</span>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed mb-4">
                 {isAr 

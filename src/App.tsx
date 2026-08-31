@@ -19,6 +19,7 @@ export default function App() {
   
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalTab, setAuthModalTab] = useState<'seller' | 'promoter'>('seller');
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState<boolean>(false);
 
   // Direct URL Path & Hash listener for /admin/login
@@ -81,11 +82,13 @@ export default function App() {
 
   const handleOpenSignIn = (tab: 'seller' | 'promoter' = 'seller') => {
     setAuthModalTab(tab);
+    setAuthModalMode('signin');
     setIsAuthModalOpen(true);
   };
 
   const handleOpenSignUp = (tab: 'seller' | 'promoter' = 'seller') => {
     setAuthModalTab(tab);
+    setAuthModalMode('signup');
     setIsAuthModalOpen(true);
   };
 
@@ -96,7 +99,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col selection:bg-blue-600 selection:text-white font-sans">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col selection:bg-blue-600 selection:text-white font-sans overflow-x-hidden">
       
       {/* Universal Header */}
       <Navbar 
@@ -112,9 +115,11 @@ export default function App() {
       />
 
       {/* Main View Router */}
-      <main className="flex-1">
+      <main className="flex-1 w-full overflow-x-hidden">
         {currentView === 'landing' && (
           <LandingPage 
+            onStartSeller={() => handleOpenSignUp('seller')}
+            onStartPromoter={() => handleOpenSignUp('promoter')}
             onNavigateToAffiliate={() => handleOpenSignIn('promoter')}
             onNavigateToAdmin={() => setIsAdminLoginOpen(true)}
             onNavigateToMerchant={() => handleOpenSignIn('seller')}
@@ -155,6 +160,7 @@ export default function App() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         initialTab={authModalTab}
+        initialMode={authModalMode}
         onLoginSeller={handleLoginSeller}
         onLoginPromoter={handleLoginPromoter}
         onOpenAdminLogin={() => {

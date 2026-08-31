@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   ShieldCheck, 
   TrendingUp, 
@@ -8,7 +8,12 @@ import {
   Globe,
   Menu,
   X,
-  Sparkles
+  Sparkles,
+  User,
+  LogIn,
+  UserPlus,
+  Store,
+  ChevronDown
 } from 'lucide-react';
 import { MerchantProfile, AffiliateProfile } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -40,9 +45,27 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const { language, setLanguage, t, isRTL } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setMobileProfileOpen(false);
+      }
+    };
+    if (mobileProfileOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [mobileProfileOpen]);
 
   const handleNavClick = (sectionId: string) => {
     setMobileMenuOpen(false);
+    setMobileProfileOpen(false);
     if (currentView !== 'landing') {
       onViewChange('landing');
       setTimeout(() => {
@@ -61,26 +84,26 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-20">
           
-            {/* Logo - RoketLead */}
-          <div className="flex items-center gap-8">
+          {/* Logo - RoketLead */}
+          <div className="flex items-center gap-6 lg:gap-8 shrink-0">
             <button 
               id="nav-logo-btn"
               onClick={() => {
                 onViewChange('landing');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex items-center gap-1 text-2xl font-black tracking-tight text-slate-950 hover:opacity-90 transition-opacity cursor-pointer group"
+              className="flex items-center gap-1 text-xl sm:text-2xl font-black tracking-tight text-slate-950 hover:opacity-90 transition-opacity cursor-pointer group"
             >
-              <span className="text-2xl sm:text-3xl font-extrabold tracking-tighter text-slate-950 group-hover:text-blue-600 transition-colors">
+              <span className="text-xl sm:text-3xl font-extrabold tracking-tighter text-slate-950 group-hover:text-blue-600 transition-colors">
                 roketlead<span className="text-blue-600">.</span>
               </span>
             </button>
 
             {/* Public Natural Navigation Links: Accueil, Qui sommes-nous, Comment ça marche, Contact */}
-            <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-600">
+            <nav className="hidden md:flex items-center gap-6 lg:gap-7 text-sm font-semibold text-slate-600">
               <button 
                 id="nav-home-btn"
                 onClick={() => handleNavClick('home-top')}
@@ -116,22 +139,23 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Controls: Language Selector & Auth CTAs */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             
-            {/* Applied Language Switcher Button (Shows only the active language) */}
+            {/* Applied Language Switcher Button (Shows only the active language, direct tap without hover dependency) */}
             <button
               id="lang-toggle-btn"
+              type="button"
               onClick={() => setLanguage(language === 'fr' ? 'ar' : 'fr')}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100/90 hover:bg-slate-200/80 active:scale-98 border border-slate-200 text-xs font-bold text-slate-800 transition-all cursor-pointer shadow-2xs"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-800 transition-colors cursor-pointer shrink-0"
               title={language === 'fr' ? 'Changer en العربية' : 'Passer en Français'}
             >
               <Globe className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-              <span className="font-semibold">{language === 'fr' ? 'FR' : 'العربية'}</span>
+              <span className="font-semibold text-xs">{language === 'fr' ? 'FR' : 'العربية'}</span>
             </button>
 
-            {/* Active Merchant Portal Badge */}
+            {/* Active Merchant Portal Badge (Desktop) */}
             {currentUserRole === 'MERCHANT' && (
-              <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2">
                 <button
                   id="nav-active-merchant-portal-btn"
                   onClick={() => onViewChange('merchant')}
@@ -161,9 +185,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* Active Affiliate Portal Badge */}
+            {/* Active Affiliate Portal Badge (Desktop) */}
             {currentUserRole === 'AFFILIATE' && (
-              <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2">
                 <button
                   id="nav-active-affiliate-portal-btn"
                   onClick={() => onViewChange('affiliate')}
@@ -193,9 +217,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* Super Admin Status */}
+            {/* Super Admin Status (Desktop) */}
             {currentUserRole === 'SUPER_ADMIN' && (
-              <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2">
                 <button
                   id="nav-active-admin-portal-btn"
                   onClick={() => onViewChange('admin')}
@@ -223,9 +247,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* Guest Actions (Sign In / Sign Up) */}
+            {/* Desktop Guest Actions (Sign In / Sign Up) */}
             {currentUserRole === 'GUEST' && (
-              <div className="flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2">
                 <button
                   id="header-signin-btn"
                   onClick={() => onOpenSignIn ? onOpenSignIn('seller') : onViewChange('merchant')}
@@ -245,20 +269,160 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* Mobile Menu Toggle Button */}
+            {/* Mobile Profile Icon Button & Dropdown (Next to Language Switcher) */}
+            <div className="relative md:hidden" ref={profileDropdownRef}>
+              <button
+                id="mobile-profile-btn"
+                type="button"
+                onClick={() => {
+                  setMobileProfileOpen(!mobileProfileOpen);
+                  setMobileMenuOpen(false);
+                }}
+                aria-label="Profil & Connexion"
+                className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-all cursor-pointer ${
+                  mobileProfileOpen 
+                    ? 'bg-blue-50 border-blue-300 text-blue-600 shadow-xs' 
+                    : currentUserRole !== 'GUEST'
+                      ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                      : 'bg-slate-100 border-slate-200 text-slate-700 active:bg-slate-200'
+                }`}
+              >
+                {currentUserRole === 'MERCHANT' ? (
+                  <Building2 className="w-4 h-4 text-indigo-600" />
+                ) : currentUserRole === 'AFFILIATE' ? (
+                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                ) : currentUserRole === 'SUPER_ADMIN' ? (
+                  <ShieldCheck className="w-4 h-4 text-purple-600" />
+                ) : (
+                  <User className="w-4 h-4" />
+                )}
+              </button>
+
+              {/* Mobile Profile Dropdown Popover */}
+              {mobileProfileOpen && (
+                <div 
+                  className={`absolute ${isRTL ? 'left-0' : 'right-0'} mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-2.5 z-50 animate-in fade-in zoom-in-95 duration-150`}
+                >
+                  {currentUserRole === 'GUEST' ? (
+                    <div className="space-y-2 px-2">
+                      <div className="px-2.5 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        {language === 'ar' ? 'تسجيل الدخول' : 'Connexion'}
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                          onClick={() => {
+                            setMobileProfileOpen(false);
+                            onOpenSignIn ? onOpenSignIn('seller') : onViewChange('merchant');
+                          }}
+                          className="flex items-center gap-1.5 p-2 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200/80 text-left text-xs font-semibold text-slate-800 cursor-pointer"
+                        >
+                          <Building2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                          <span className="truncate">{language === 'ar' ? 'بائع' : 'Vendeur'}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setMobileProfileOpen(false);
+                            onOpenSignIn ? onOpenSignIn('promoter') : onViewChange('affiliate');
+                          }}
+                          className="flex items-center gap-1.5 p-2 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200/80 text-left text-xs font-semibold text-slate-800 cursor-pointer"
+                        >
+                          <TrendingUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span className="truncate">{language === 'ar' ? 'مسوق' : 'Promoteur'}</span>
+                        </button>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-100">
+                        <div className="px-2.5 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          {language === 'ar' ? 'إنشاء حساب جديد' : 'Inscription'}
+                        </div>
+                        <div className="space-y-1.5">
+                          <button
+                            onClick={() => {
+                              setMobileProfileOpen(false);
+                              onOpenSignUp ? onOpenSignUp('seller') : onViewChange('merchant');
+                            }}
+                            className="w-full flex items-center justify-between p-2 rounded-xl bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200/70 text-left text-xs font-bold text-blue-900 cursor-pointer"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <Store className="w-3.5 h-3.5 text-blue-600" />
+                              {language === 'ar' ? 'ابدأ كبائع / متجر' : 'Démarrer comme Vendeur'}
+                            </span>
+                            <ArrowRight className={`w-3 h-3 text-blue-600 ${isRTL ? 'rotate-180' : ''}`} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setMobileProfileOpen(false);
+                              onOpenSignUp ? onOpenSignUp('promoter') : onViewChange('affiliate');
+                            }}
+                            className="w-full flex items-center justify-between p-2 rounded-xl bg-emerald-50/70 hover:bg-emerald-100/70 border border-emerald-200/70 text-left text-xs font-bold text-emerald-900 cursor-pointer"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                              {language === 'ar' ? 'انضم كمسوق / صانع محتوى' : 'Devenir Promoteur'}
+                            </span>
+                            <ArrowRight className={`w-3 h-3 text-emerald-600 ${isRTL ? 'rotate-180' : ''}`} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 px-3 py-1">
+                      <div className="text-xs font-bold text-slate-900 truncate">
+                        {currentUserRole === 'MERCHANT' 
+                          ? (activeMerchant?.companyName || 'Espace Vendeur')
+                          : currentUserRole === 'AFFILIATE'
+                            ? (activeAffiliate?.fullName || 'Espace Promoteur')
+                            : 'Super Admin'}
+                      </div>
+                      <div className="text-[10px] text-slate-500 uppercase font-semibold">
+                        {currentUserRole === 'MERCHANT' ? 'Boutique Partenaire' : currentUserRole === 'AFFILIATE' ? 'Affilié / Promoteur' : 'Console Racine'}
+                      </div>
+                      <div className="pt-2 border-t border-slate-100 flex flex-col gap-1.5">
+                        <button
+                          onClick={() => {
+                            setMobileProfileOpen(false);
+                            if (currentUserRole === 'MERCHANT') onViewChange('merchant');
+                            else if (currentUserRole === 'AFFILIATE') onViewChange('affiliate');
+                            else if (currentUserRole === 'SUPER_ADMIN') onViewChange('admin');
+                          }}
+                          className="w-full py-1.5 px-2.5 rounded-lg bg-blue-600 text-white text-xs font-bold text-center cursor-pointer"
+                        >
+                          {language === 'ar' ? 'لوحة التحكم' : 'Tableau de bord'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setMobileProfileOpen(false);
+                            if (onLogout) onLogout();
+                          }}
+                          className="w-full py-1.5 px-2.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold text-center cursor-pointer flex items-center justify-center gap-1"
+                        >
+                          <LogOut className="w-3 h-3" />
+                          <span>{language === 'ar' ? 'تسجيل الخروج' : 'Déconnexion'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Navigation Menu Toggle Button */}
             <button
               id="mobile-menu-btn"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-slate-600 hover:text-slate-950 md:hidden rounded-xl hover:bg-slate-100 cursor-pointer"
+              onClick={() => {
+                setMobileMenuOpen(!mobileMenuOpen);
+                setMobileProfileOpen(false);
+              }}
+              className="p-1.5 sm:p-2 text-slate-600 hover:text-slate-950 md:hidden rounded-xl hover:bg-slate-100 cursor-pointer"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
             </button>
 
           </div>
 
         </div>
 
-        {/* Mobile Dropdown Menu */}
+        {/* Mobile Navigation Drawer Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-slate-100 space-y-2 animate-in fade-in duration-200">
             <button 
@@ -285,22 +449,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               {t('nav.contact')}
             </button>
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between px-3">
+
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between px-3">
               <span className="text-xs text-slate-500 font-medium">{t('nav.language')} :</span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setLanguage('fr'); setMobileMenuOpen(false); }}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold ${language === 'fr' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}
-                >
-                  Français
-                </button>
-                <button
-                  onClick={() => { setLanguage('ar'); setMobileMenuOpen(false); }}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold ${language === 'ar' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}
-                >
-                  العربية
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  setLanguage(language === 'fr' ? 'ar' : 'fr');
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-800"
+              >
+                <Globe className="w-3.5 h-3.5 text-blue-600" />
+                <span>{language === 'fr' ? 'FR' : 'العربية'}</span>
+              </button>
             </div>
           </div>
         )}
@@ -309,3 +470,4 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+
