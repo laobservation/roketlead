@@ -56,6 +56,7 @@ import {
   MOROCCAN_BANKS 
 } from '../data/mockData';
 import { useLanguage } from '../context/LanguageContext';
+import { StoreLogo } from './StoreLogo';
 
 const PERFORMANCE_CHART_DATA = [
   { date: '24 Août', clicks: 120, conversions: 8, earningsMAD: 780 },
@@ -558,9 +559,12 @@ export const AffiliateDashboard: React.FC = () => {
                 <div key={merchant.id} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition-all">
                   <div>
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-2xl border border-slate-200">
-                        {merchant.logo}
-                      </div>
+                      <StoreLogo
+                        logo={merchant.logo}
+                        name={merchant.companyName}
+                        category={merchant.category}
+                        size="lg"
+                      />
                       <div>
                         <h4 className="font-bold text-slate-950 text-base">{merchant.companyName}</h4>
                         <span className="text-xs text-slate-500">{merchant.category} • {merchant.city}</span>
@@ -930,8 +934,13 @@ export const AffiliateDashboard: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-100 relative">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{selectedMerchantForLink.logo}</span>
+              <div className="flex items-center gap-3">
+                <StoreLogo
+                  logo={selectedMerchantForLink.logo}
+                  name={selectedMerchantForLink.companyName}
+                  category={selectedMerchantForLink.category}
+                  size="md"
+                />
                 <div>
                   <h3 className="font-bold text-slate-950 text-base">
                     {isAr ? 'توليد رابط تتبع ذكي' : 'Générer un Lien de Tracking'}

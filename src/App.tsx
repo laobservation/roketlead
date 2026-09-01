@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
+import { EarlyAccessLandingPage } from './components/EarlyAccessLandingPage';
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
 import { AffiliateDashboard } from './components/AffiliateDashboard';
 import { MerchantDashboard } from './components/MerchantDashboard';
@@ -11,7 +12,7 @@ import { MerchantProfile, AffiliateProfile } from './types';
 import { INITIAL_MERCHANTS, INITIAL_AFFILIATE_PROFILE } from './data/mockData';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'landing' | 'admin' | 'merchant' | 'affiliate' | 'schema'>('landing');
+  const [currentView, setCurrentView] = useState<'landing' | 'admin' | 'merchant' | 'affiliate' | 'schema' | 'earlyaccess'>('landing');
   const [currentUserRole, setCurrentUserRole] = useState<'GUEST' | 'MERCHANT' | 'AFFILIATE' | 'SUPER_ADMIN'>('GUEST');
   
   const [activeMerchant, setActiveMerchant] = useState<MerchantProfile | null>(INITIAL_MERCHANTS[1]); // Default Caftan Royal Casablanca
@@ -22,7 +23,7 @@ export default function App() {
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState<boolean>(false);
 
-  // Direct URL Path & Hash listener for /admin/login
+  // Direct URL Path & Hash listener for /earlyaccess and /admin/login
   useEffect(() => {
     const handleUrlCheck = () => {
       const path = window.location.pathname.toLowerCase();
@@ -31,6 +32,10 @@ export default function App() {
       
       if (path.includes('/admin/login') || hash.includes('admin/login') || hash.includes('admin-login') || search.includes('admin=login')) {
         setIsAdminLoginOpen(true);
+      } else if (path.includes('/earlyaccess') || hash.includes('earlyaccess') || hash.includes('early-access') || search.includes('page=earlyaccess') || search.includes('earlyaccess')) {
+        setCurrentView('earlyaccess');
+      } else if (path === '/' && (hash === '' || hash === '#') && currentView === 'earlyaccess') {
+        // If explicitly at root
       }
     };
 
@@ -53,6 +58,15 @@ export default function App() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  const handleNavigateView = (view: 'landing' | 'admin' | 'merchant' | 'affiliate' | 'earlyaccess') => {
+    setCurrentView(view);
+    if (view === 'earlyaccess') {
+      window.history.pushState({}, '', '/earlyaccess');
+    } else if (view === 'landing') {
+      window.history.pushState({}, '', '/');
+    }
+  };
 
   // Handlers for authentications
   const handleLoginSeller = (merchant: MerchantProfile) => {
@@ -101,18 +115,20 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col selection:bg-blue-600 selection:text-white font-sans overflow-x-hidden">
       
-      {/* Universal Header */}
-      <Navbar 
-        currentView={currentView} 
-        onViewChange={(view) => setCurrentView(view)} 
-        onOpenSignIn={(tab) => handleOpenSignIn(tab || 'seller')}
-        onOpenSignUp={(tab) => handleOpenSignUp(tab || 'seller')}
-        onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
-        currentUserRole={currentUserRole}
-        activeMerchant={activeMerchant}
-        activeAffiliate={activeAffiliate}
-        onLogout={handleLogout}
-      />
+      {/* Universal Header - Hidden on Early Access Landing Page */}
+      {currentView !== 'earlyaccess' && (
+        <Navbar 
+          currentView={currentView} 
+          onViewChange={handleNavigateView} 
+          onOpenSignIn={(tab) => handleOpenSignIn(tab || 'seller')}
+          onOpenSignUp={(tab) => handleOpenSignUp(tab || 'seller')}
+          onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
+          currentUserRole={currentUserRole}
+          activeMerchant={activeMerchant}
+          activeAffiliate={activeAffiliate}
+          onLogout={handleLogout}
+        />
+      )}
 
       {/* Main View Router */}
       <main className="flex-1 w-full overflow-x-hidden">
@@ -123,7 +139,16 @@ export default function App() {
             onNavigateToAffiliate={() => handleOpenSignIn('promoter')}
             onNavigateToAdmin={() => setIsAdminLoginOpen(true)}
             onNavigateToMerchant={() => handleOpenSignIn('seller')}
+            onNavigateToEarlyAccess={() => handleNavigateView('earlyaccess')}
             onSelectMerchant={handleSelectMerchant}
+          />
+        )}
+
+        {currentView === 'earlyaccess' && (
+          <EarlyAccessLandingPage
+            onNavigateHome={() => handleNavigateView('landing')}
+            onOpenSignIn={(tab) => handleOpenSignIn(tab || 'seller')}
+            onOpenSignUp={(tab) => handleOpenSignUp(tab || 'seller')}
           />
         )}
 

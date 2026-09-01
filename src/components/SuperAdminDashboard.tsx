@@ -46,6 +46,7 @@ import {
 } from 'recharts';
 import { MerchantProfile, SystemAuditLog, Conversion } from '../types';
 import { INITIAL_MERCHANTS, INITIAL_AUDIT_LOGS, INITIAL_CONVERSIONS } from '../data/mockData';
+import { StoreLogo } from './StoreLogo';
 
 const REVENUE_TIMELINE_DATA = [
   { day: 'Mon', gmv: 42000, saasCut: 2100, deliveredOrders: 84 },
@@ -543,9 +544,12 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSwit
                       <tr key={merchant.id} className="hover:bg-slate-50/60 transition-colors">
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-lg shadow-2xs">
-                              {merchant.logo}
-                            </div>
+                            <StoreLogo
+                              logo={merchant.logo}
+                              name={merchant.companyName}
+                              category={merchant.category}
+                              size="sm"
+                            />
                             <div>
                               <div className="font-bold text-slate-900 flex items-center gap-1">
                                 <span>{merchant.companyName}</span>

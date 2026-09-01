@@ -22,12 +22,12 @@ export const translations = {
     'hero.badge': 'Plateforme d’Affiliation E-commerce au Maroc',
     'hero.title1': 'Boostez vos ventes e-commerce par l’affiliation',
     'hero.titleHighlight': 'au Maroc',
-    'hero.subtitle': 'Boostez vos ventes et vos commissions grâce au tracking d\'affiliation Roketlead.',
+    'hero.subtitle': 'Connectez votre boutique (YouCan, Shopify, WooCommerce) à des créateurs de contenu. Ne payez une commission que lorsqu\'un prospect atteint votre Thank You Page.',
     'hero.ctaSeller': 'Démarrer en tant que Vendeur',
     'hero.ctaPromoter': 'Devenir Promoteur / Affilié',
     'hero.stats.merchants': 'Boutiques & Vendeurs',
     'hero.stats.affiliates': 'Promoteurs & Créateurs',
-    'hero.stats.volume': 'MAD Ventes générées',
+    'hero.stats.volume': 'Leads & Ventes générées',
     'hero.stats.deliveryRate': 'Taux de conversion moyen',
 
     // Live Portal Switcher Banner on Hero
@@ -185,12 +185,12 @@ export const translations = {
     'hero.badge': 'منصة التسويق بالعمولة بالمغرب',
     'hero.title1': 'ضاعف مبيعات متجرك عبر التسويق بالعمولة',
     'hero.titleHighlight': 'في المغرب',
-    'hero.subtitle': 'ضاعف مبيعاتك وعمولاتك بفضل تتبع التسويق بالعمولة من روكيت ليد.',
+    'hero.subtitle': 'اربط متجرك (YouCan، Shopify، WooCommerce) بصناع المحتوى المعتمدين. ادفع العمولة فقط عندما يصل الزبون إلى صفحة الشكر (Thank You Page).',
     'hero.ctaSeller': 'ابدأ كبائع / متجر',
     'hero.ctaPromoter': 'انضم كمسوق / صانع محتوى',
     'hero.stats.merchants': 'متجر وبائع نشط',
     'hero.stats.affiliates': 'مسوق وصانع محتوى',
-    'hero.stats.volume': 'درهم مبيعات محققة',
+    'hero.stats.volume': 'ليدات ومبيعات محققة',
     'hero.stats.deliveryRate': 'معدل التحويل بالعمولة',
 
     // Live Portal Switcher Banner on Hero

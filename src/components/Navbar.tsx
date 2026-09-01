@@ -19,8 +19,8 @@ import { MerchantProfile, AffiliateProfile } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 
 interface NavbarProps {
-  currentView: 'landing' | 'admin' | 'merchant' | 'affiliate';
-  onViewChange: (view: 'landing' | 'admin' | 'merchant' | 'affiliate') => void;
+  currentView: 'landing' | 'admin' | 'merchant' | 'affiliate' | 'earlyaccess';
+  onViewChange: (view: 'landing' | 'admin' | 'merchant' | 'affiliate' | 'earlyaccess') => void;
   onOpenSignIn?: (initialTab?: 'seller' | 'promoter') => void;
   onOpenSignUp?: (initialTab?: 'seller' | 'promoter') => void;
   onOpenAdminLogin?: () => void;
@@ -87,59 +87,59 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           
-          {/* Logo - RoketLead */}
-          <div className="flex items-center gap-6 lg:gap-8 shrink-0">
+          {/* Left: Logo - RoketLead */}
+          <div className="flex items-center shrink-0">
             <button 
               id="nav-logo-btn"
               onClick={() => {
                 onViewChange('landing');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex items-center gap-1 text-xl sm:text-2xl font-black tracking-tight text-slate-950 hover:opacity-90 transition-opacity cursor-pointer group"
+              className="flex items-center gap-1 py-1 text-2xl sm:text-3xl font-black tracking-tight text-slate-950 hover:opacity-90 transition-opacity cursor-pointer group"
             >
-              <span className="text-xl sm:text-3xl font-extrabold tracking-tighter text-slate-950 group-hover:text-blue-600 transition-colors">
+              <span className="font-extrabold tracking-tighter text-slate-950 group-hover:text-blue-600 transition-colors">
                 roketlead<span className="text-blue-600">.</span>
               </span>
             </button>
-
-            {/* Public Natural Navigation Links: Accueil, Qui sommes-nous, Comment ça marche, Contact */}
-            <nav className="hidden md:flex items-center gap-6 lg:gap-7 text-sm font-semibold text-slate-600">
-              <button 
-                id="nav-home-btn"
-                onClick={() => handleNavClick('home-top')}
-                className="hover:text-blue-600 transition-colors py-1 cursor-pointer"
-              >
-                {t('nav.home')}
-              </button>
-
-              <button 
-                id="nav-about-btn"
-                onClick={() => handleNavClick('section-about')}
-                className="hover:text-blue-600 transition-colors py-1 cursor-pointer"
-              >
-                {t('nav.whoWeAre')}
-              </button>
-
-              <button 
-                id="nav-how-btn"
-                onClick={() => handleNavClick('section-how-it-works')}
-                className="hover:text-blue-600 transition-colors py-1 cursor-pointer"
-              >
-                {t('nav.howItWorks')}
-              </button>
-
-              <button 
-                id="nav-contact-btn"
-                onClick={() => handleNavClick('section-contact')}
-                className="hover:text-blue-600 transition-colors py-1 cursor-pointer"
-              >
-                {t('nav.contact')}
-              </button>
-            </nav>
           </div>
 
+          {/* Center: Primary Centered Navigation Links */}
+          <nav className="hidden md:flex flex-1 items-center justify-center gap-8 lg:gap-10 text-[15px] lg:text-base font-semibold text-slate-700 px-4">
+            <button 
+              id="nav-home-btn"
+              onClick={() => handleNavClick('home-top')}
+              className="hover:text-blue-600 transition-colors py-2 cursor-pointer"
+            >
+              {t('nav.home')}
+            </button>
+
+            <button 
+              id="nav-about-btn"
+              onClick={() => handleNavClick('section-about')}
+              className="hover:text-blue-600 transition-colors py-2 cursor-pointer"
+            >
+              {t('nav.whoWeAre')}
+            </button>
+
+            <button 
+              id="nav-how-btn"
+              onClick={() => handleNavClick('section-how-it-works')}
+              className="hover:text-blue-600 transition-colors py-2 cursor-pointer"
+            >
+              {t('nav.howItWorks')}
+            </button>
+
+            <button 
+              id="nav-contact-btn"
+              onClick={() => handleNavClick('section-contact')}
+              className="hover:text-blue-600 transition-colors py-2 cursor-pointer"
+            >
+              {t('nav.contact')}
+            </button>
+          </nav>
+
           {/* Controls: Language Selector & Auth CTAs */}
-          <div className="flex items-center gap-1.5 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             
             {/* Applied Language Switcher Button (Shows only the active language, direct tap without hover dependency) */}
             <button

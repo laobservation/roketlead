@@ -54,6 +54,7 @@ import { WOOCOMMERCE_PLUGIN_CODE } from '../integrations/woocommercePluginSource
 import { WEBHOOK_HANDLER_TS_CODE } from '../integrations/webhookHandlerSource';
 import { PrismaSchemaViewer } from './PrismaSchemaViewer';
 import { useLanguage } from '../context/LanguageContext';
+import { StoreLogo } from './StoreLogo';
 
 interface MerchantDashboardProps {
   onSwitchToAffiliateView?: () => void;
@@ -349,9 +350,12 @@ export const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
       {/* Header with Store Selector */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-3xl shadow-xs">
-            {currentMerchant.logo}
-          </div>
+          <StoreLogo
+            logo={currentMerchant.logo}
+            name={currentMerchant.companyName}
+            category={currentMerchant.category}
+            size="xl"
+          />
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-black text-slate-950 tracking-tight">
@@ -387,7 +391,7 @@ export const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
             >
               {merchants.map(m => (
                 <option key={m.id} value={m.id}>
-                  {m.logo} {m.companyName} ({m.platformType})
+                  {m.companyName} ({m.platformType})
                 </option>
               ))}
             </select>

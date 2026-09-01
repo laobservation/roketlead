@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowRight, 
   CheckCircle2, 
@@ -24,11 +24,20 @@ import {
   ArrowUpRight,
   Package,
   Layers,
-  Search
+  Search,
+  Scale,
+  XCircle,
+  Share2,
+  Link2,
+  MousePointerClick,
+  BadgeDollarSign,
+  SlidersHorizontal,
+  Wallet
 } from 'lucide-react';
 import { INITIAL_MERCHANTS } from '../data/mockData';
 import { MerchantProfile } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { StoreLogo } from './StoreLogo';
 
 interface LandingPageProps {
   onStartSeller?: () => void;
@@ -36,6 +45,7 @@ interface LandingPageProps {
   onNavigateToAffiliate: () => void;
   onNavigateToAdmin: () => void;
   onNavigateToMerchant?: () => void;
+  onNavigateToEarlyAccess?: () => void;
   onSelectMerchant?: (merchant: MerchantProfile) => void;
 }
 
@@ -45,16 +55,79 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onNavigateToAffiliate, 
   onNavigateToAdmin,
   onNavigateToMerchant,
+  onNavigateToEarlyAccess,
   onSelectMerchant 
 }) => {
   const { language, t, isRTL } = useLanguage();
   const isAr = language === 'ar';
 
-  // Interactive Calculator State
+  // Interactive How it works role tab
+  const [howRole, setHowRole] = useState<'seller' | 'promoter'>('seller');
+
+  // Hero Snapshot Switcher State: 'seller' (Merchant View) vs 'promoter' (Affiliate View)
+  const [heroSnapshotRole, setHeroSnapshotRole] = useState<'seller' | 'promoter'>('seller');
+
+  // Live Moving Numbers Simulation State
+  const [liveStats, setLiveStats] = useState({
+    // Seller Stats
+    sellerLeads: 3420,
+    sellerClicks: 78530,
+    sellerAffiliates: 154,
+    sellerRevenueMAD: 83302,
+    // Promoter Stats
+    promoterLeads: 418,
+    promoterClicks: 9640,
+    promoterActiveOffers: 12,
+    promoterEarningsMAD: 14850
+  });
+
+  // Pulse animation indicators when numbers tick
+  const [pulsingStat, setPulsingStat] = useState<string | null>(null);
+
+  // Auto-increment live moving numbers realistically every 2.5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const randomTrigger = Math.random();
+      
+      setLiveStats(prev => {
+        const next = { ...prev };
+        
+        // Seller increments
+        if (randomTrigger > 0.3) {
+          const clickAdd = Math.floor(Math.random() * 4) + 1;
+          next.sellerClicks += clickAdd;
+        }
+        if (randomTrigger > 0.6) {
+          next.sellerLeads += 1;
+          const commissionAdd = Math.floor(Math.random() * 45) + 15; // 15 to 60 MAD per lead
+          next.sellerRevenueMAD += commissionAdd;
+          setPulsingStat('seller-lead');
+          setTimeout(() => setPulsingStat(null), 1000);
+        }
+        
+        // Promoter increments
+        if (randomTrigger > 0.4) {
+          next.promoterClicks += Math.floor(Math.random() * 2) + 1;
+        }
+        if (randomTrigger > 0.75) {
+          next.promoterLeads += 1;
+          const earningAdd = Math.floor(Math.random() * 50) + 20;
+          next.promoterEarningsMAD += earningAdd;
+          setPulsingStat('promoter-lead');
+          setTimeout(() => setPulsingStat(null), 1000);
+        }
+        
+        return next;
+      });
+    }, 2400);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Interactive Calculator State (ROI in MAD)
   const [affiliateCount, setAffiliateCount] = useState<number>(35);
   const [avgOrderValueMAD, setAvgOrderValueMAD] = useState<number>(450);
   const [salesPerAffiliateMonth, setSalesPerAffiliateMonth] = useState<number>(20);
-  const [pricingCycle, setPricingCycle] = useState<'monthly' | 'yearly' | 'lifetime'>('monthly');
   const [favoriteMerchants, setFavoriteMerchants] = useState<string[]>(['merch-01', 'merch-02']);
   const [marketSearch, setMarketSearch] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -131,15 +204,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* Localized Headline */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[66px] font-extrabold text-slate-950 tracking-tight leading-[1.15] max-w-4xl mx-auto mb-6">
-            {t('hero.title1')}{' '}
+            {isAr ? 'ضاعف مبيعات متجرك عبر التسويق بالعمولة' : 'Boostez vos ventes e-commerce par l\'affiliation'}{' '}
             <span className="text-blue-600 underline decoration-blue-200 underline-offset-8">
-              {t('hero.titleHighlight')}
+              {isAr ? 'في المغرب' : 'au Maroc'}
             </span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
-            {t('hero.subtitle')}
+          <p className="text-lg sm:text-xl text-slate-600 max-w-3xl mx-auto mb-10 leading-relaxed font-normal">
+            {isAr 
+              ? 'اربط متجرك (YouCan، Shopify، WooCommerce) بصناع المحتوى المعتمدين. ادفع العمولة فقط عندما يصل الزبون إلى صفحة الشكر (Thank You Page).' 
+              : 'Connectez votre boutique (YouCan, Shopify, WooCommerce) à des créateurs de contenu. Ne payez une commission que lorsqu\'un prospect atteint votre Thank You Page.'}
           </p>
 
           {/* Main Action Buttons */}
@@ -162,132 +237,356 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </button>
           </div>
 
-          {/* Floating Live Showcase Card */}
-          <div className="relative max-w-5xl mx-auto rounded-3xl p-1 bg-gradient-to-b from-blue-300/40 via-white/80 to-indigo-100/50 shadow-2xl card-glow-subtle transition-transform duration-300 hover:scale-[1.005]">
-            <div className="bg-white/95 backdrop-blur-md rounded-[22px] border border-slate-100 p-4 sm:p-7 overflow-hidden text-left relative">
-              
-              {/* Top Bar of the Mock Dashboard */}
-              <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-100 mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-lg shadow-xs shadow-blue-500/30">
-                    r.
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-slate-900">
-                        {isAr ? 'مركز الأداء والتجارة الإلكترونية بالمغرب' : 'Plateforme d’Affiliation & E-Commerce Maroc'}
-                      </h3>
-                      <span className="px-2 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full">
-                        {isAr ? 'مباشر وتلقائي' : 'Tracking Actif'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      {isAr ? 'شبكة التوصيل الوطني والدفع عند الاستلام COD' : 'Réseau National COD (Casablanca, Rabat, Marrakech, Fès)'}
-                    </p>
-                  </div>
-                </div>
+          {/* Interactive Role Switcher & Floating Live Showcase Card */}
+          <div className="max-w-5xl mx-auto mb-6 flex flex-col items-center">
+            
+            {/* Sliding Toggle Control: Left (Promoters) <-> Right (Sellers) */}
+            <div className="inline-flex items-center gap-3 p-1.5 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-md mb-5">
+              <span className="text-xs font-bold text-slate-500 pl-2 hidden sm:inline">
+                {isAr ? 'عرض لوحة التحكم :' : 'Aperçu Dashboard :'}
+              </span>
 
-                <div className="flex items-center gap-2">
-                  {onNavigateToMerchant && (
-                    <button 
-                      onClick={onNavigateToMerchant}
-                      className="px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
-                    >
-                      <Building2 className="w-3.5 h-3.5" />
-                      <span>{t('nav.sellerPortal')}</span>
-                    </button>
-                  )}
-                  <button 
-                    onClick={onNavigateToAffiliate}
-                    className="px-3.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors cursor-pointer flex items-center gap-1"
-                  >
-                    <span>{t('nav.promoterPortal')}</span>
-                    <ArrowUpRight className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180' : ''}`} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Real-time KPI Stats Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-slate-500">
-                      {isAr ? 'حجم المبيعات المستلمة' : 'Volume Livré COD'}
-                    </span>
-                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                      +87.3%
-                    </span>
-                  </div>
-                  <div className="text-xl sm:text-2xl font-extrabold text-slate-950">
-                    248,400 <span className="text-xs font-bold text-slate-500">{isAr ? 'د.م' : 'MAD'}</span>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-slate-500">
-                      {isAr ? 'النقرات المؤكدة' : 'Clics Trackés'}
-                    </span>
-                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                      +44.2%
-                    </span>
-                  </div>
-                  <div className="text-xl sm:text-2xl font-extrabold text-slate-950">
-                    78,530
-                  </div>
-                </div>
-
-                <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-slate-500">
-                      {isAr ? 'المسوقون النشطون' : 'Promoteurs Actifs'}
-                    </span>
-                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                      +78.9%
-                    </span>
-                  </div>
-                  <div className="text-xl sm:text-2xl font-extrabold text-slate-950">
-                    154
-                  </div>
-                </div>
-
-                <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-slate-500">
-                      {isAr ? 'العمولات المحولة' : 'Commissions Versées'}
-                    </span>
-                    <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                      +27.6%
-                    </span>
-                  </div>
-                  <div className="text-xl sm:text-2xl font-extrabold text-slate-950">
-                    83,302 <span className="text-xs font-bold text-slate-500">{isAr ? 'د.م' : 'MAD'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom mini preview row */}
-              <div className="bg-gradient-to-r from-blue-50/60 via-indigo-50/40 to-slate-50 p-4 rounded-xl border border-blue-100/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-600/10 text-blue-700 flex items-center justify-center font-bold text-sm">
-                    ⚡
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">
-                      {isAr ? 'ربط تلقائي مع أمانة، كاثيديس، وسندإت' : 'Synchronisation Directe Amana & Cathedis Webhooks'}
-                    </h4>
-                    <p className="text-[11px] text-slate-500">
-                      {isAr ? 'يتم تحويل العمولة للرصيد فور تسليم الطرد وقبض المبلغ من الزبون.' : 'Les commissions sont débloquées dès confirmation de livraison par le transporteur.'}
-                    </p>
-                  </div>
-                </div>
+              {/* Toggle Switcher Container */}
+              <div className="relative flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/80">
+                {/* Left option: Promoters */}
                 <button
-                  onClick={onNavigateToAffiliate}
-                  className="px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all cursor-pointer whitespace-nowrap"
+                  type="button"
+                  id="snapshot-toggle-promoter"
+                  onClick={() => setHeroSnapshotRole('promoter')}
+                  className={`relative z-10 flex items-center gap-2 px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${
+                    heroSnapshotRole === 'promoter'
+                      ? 'text-emerald-700 bg-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 >
-                  {isAr ? 'دخول فوري كمسوق' : 'Accéder au Portail Promoteur'}
+                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                  <span>{isAr ? 'صناع المحتوى / مسوقين' : 'Espace Promoteurs'}</span>
+                </button>
+
+                {/* Right option: Sellers */}
+                <button
+                  type="button"
+                  id="snapshot-toggle-seller"
+                  onClick={() => setHeroSnapshotRole('seller')}
+                  className={`relative z-10 flex items-center gap-2 px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${
+                    heroSnapshotRole === 'seller'
+                      ? 'text-blue-700 bg-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Building2 className="w-4 h-4 text-blue-600" />
+                  <span>{isAr ? 'أصحاب المتاجر / بائعين' : 'Espace Vendeurs'}</span>
                 </button>
               </div>
+
+              {/* Subtle Live Badge */}
+              <div className="pr-2 pl-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                <span className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider">Live Feed</span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Floating Live Showcase Card with Dynamic View */}
+          <div className="relative max-w-5xl mx-auto rounded-3xl p-1 bg-gradient-to-b from-blue-300/40 via-white/80 to-indigo-100/50 shadow-2xl card-glow-subtle transition-all duration-300">
+            <div className="bg-white/95 backdrop-blur-md rounded-[22px] border border-slate-100 p-4 sm:p-7 overflow-hidden text-left relative">
+              
+              {heroSnapshotRole === 'seller' ? (
+                /* ========================================================================= */
+                /* SELLER / MERCHANT VIEW */
+                /* ========================================================================= */
+                <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                  {/* Top Bar of the Mock Dashboard */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-100 mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-lg shadow-xs shadow-blue-500/30">
+                        r.
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-bold text-slate-900">
+                            {isAr ? 'مركز تحكم البائع (YouCan / Shopify)' : 'Plateforme d’Affiliation & Tracking Maroc'}
+                          </h3>
+                          <span className="px-2 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            {isAr ? 'بيكسل مباشر (Thank You Page)' : 'Pixel Actif (Thank You Page)'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          {isAr ? 'تتبع فوري ومباشر لجميع الليدات والمبيعات' : 'Attribution en temps réel 100% automatisée'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {onNavigateToMerchant && (
+                        <button 
+                          onClick={onNavigateToMerchant}
+                          className="px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
+                        >
+                          <Building2 className="w-3.5 h-3.5" />
+                          <span>{t('nav.sellerPortal')}</span>
+                        </button>
+                      )}
+                      <button 
+                        onClick={onNavigateToAffiliate}
+                        className="px-3.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors cursor-pointer flex items-center gap-1"
+                      >
+                        <span>{t('nav.promoterPortal')}</span>
+                        <ArrowUpRight className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180' : ''}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Real-time KPI Stats Cards with Live Moving Ticker */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    
+                    {/* Card 1: Leads Trackés (Thank You Page) */}
+                    <div className={`p-4 bg-slate-50/80 rounded-2xl border transition-all duration-300 ${
+                      pulsingStat === 'seller-lead' ? 'border-emerald-400 bg-emerald-50/30 scale-[1.02]' : 'border-slate-100'
+                    }`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-slate-500">
+                          {isAr ? 'الليدات المؤكدة (صفحة الشكر)' : 'Leads Trackés (Thank You Page)'}
+                        </span>
+                        <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          +87.3%
+                        </span>
+                      </div>
+                      <div className="text-xl sm:text-2xl font-extrabold text-slate-950 font-mono tracking-tight flex items-baseline gap-1.5">
+                        <span>{liveStats.sellerLeads.toLocaleString()}</span>
+                        <span className="text-xs font-bold text-slate-500 font-sans">{isAr ? 'ليد' : 'Leads'}</span>
+                      </div>
+                    </div>
+
+                    {/* Card 2: Clics Trackés */}
+                    <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100 transition-all">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-slate-500">
+                          {isAr ? 'النقرات المؤكدة' : 'Clics Trackés'}
+                        </span>
+                        <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          +44.2%
+                        </span>
+                      </div>
+                      <div className="text-xl sm:text-2xl font-extrabold text-slate-950 font-mono tracking-tight flex items-baseline gap-1.5">
+                        <span>{liveStats.sellerClicks.toLocaleString()}</span>
+                        <span className="text-xs font-bold text-slate-500 font-sans">{isAr ? 'نقرة' : 'Clics'}</span>
+                      </div>
+                    </div>
+
+                    {/* Card 3: Promoteurs Actifs */}
+                    <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-slate-500">
+                          {isAr ? 'المسوقون النشطون' : 'Promoteurs Actifs'}
+                        </span>
+                        <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          +78.9%
+                        </span>
+                      </div>
+                      <div className="text-xl sm:text-2xl font-extrabold text-slate-950 font-mono tracking-tight flex items-baseline gap-1.5">
+                        <span>{liveStats.sellerAffiliates}</span>
+                        <span className="text-xs font-bold text-slate-500 font-sans">{isAr ? 'مسوق' : 'Affiliés'}</span>
+                      </div>
+                    </div>
+
+                    {/* Card 4: Commissions Générées */}
+                    <div className={`p-4 bg-slate-50/80 rounded-2xl border transition-all duration-300 ${
+                      pulsingStat === 'seller-lead' ? 'border-blue-400 bg-blue-50/40 scale-[1.02]' : 'border-slate-100'
+                    }`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-slate-500">
+                          {isAr ? 'العمولات المكتسبة' : 'Commissions Générées'}
+                        </span>
+                        <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                          +27.6%
+                        </span>
+                      </div>
+                      <div className="text-xl sm:text-2xl font-extrabold text-slate-950 font-mono tracking-tight flex items-baseline gap-1.5">
+                        <span>{liveStats.sellerRevenueMAD.toLocaleString()}</span>
+                        <span className="text-xs font-bold text-slate-500 font-sans">{isAr ? 'د.م' : 'MAD'}</span>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Status Banner */}
+                  <div className="bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-slate-50 p-4 rounded-xl border border-blue-100/70 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                        ⚡
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900">
+                          {isAr 
+                            ? 'بيكسل التتبع نشط على صفحة الشكر (Thank You Page) — تزامن فوري للتحويلات' 
+                            : 'Tracking Pixel Active on Thank You Page — Instant Conversion Sync'}
+                        </h4>
+                        <p className="text-[11px] text-slate-500">
+                          {isAr 
+                            ? 'يتم احتساب الليد وإسناد العمولة فوراً عند وصول المشتري لصفحة الشكر بعد ملء الاستمارة.' 
+                            : 'Attribution instantanée dès que l’acheteur valide le formulaire de commande et atteint la page de remerciement.'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={onStartSeller || onNavigateToMerchant || onNavigateToAffiliate}
+                      className="px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all cursor-pointer whitespace-nowrap"
+                    >
+                      {isAr ? 'دخول فوري كبائع' : 'Accéder au Portail Vendeur'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* ========================================================================= */
+                /* PROMOTER / AFFILIATE VIEW */
+                /* ========================================================================= */
+                <div className="animate-in fade-in slide-in-from-left-4 duration-300">
+                  {/* Top Bar of the Promoter Dashboard */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-100 mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-lg shadow-xs shadow-emerald-500/30">
+                        ⚡
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-bold text-slate-900">
+                            {isAr ? 'لوحة تحكم المسوق / صانع المحتوى' : 'Espace Affilié & Créateur de Contenu'}
+                          </h3>
+                          <span className="px-2 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            {isAr ? 'روابط التتبع نشطة (rkt.ma)' : 'Liens Trackés Actifs (rkt.ma)'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          {isAr ? 'أرباحك المباشرة وعمولات كل ليد محقق' : 'Suivi de vos gains directs et retraits bancaires'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={onNavigateToAffiliate}
+                        className="px-3.5 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
+                      >
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        <span>{t('nav.promoterPortal')}</span>
+                      </button>
+                      {onNavigateToMerchant && (
+                        <button 
+                          onClick={onNavigateToMerchant}
+                          className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer flex items-center gap-1"
+                        >
+                          <Building2 className="w-3.5 h-3.5" />
+                          <span>{t('nav.sellerPortal')}</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Real-time KPI Stats Cards for Promoter with Live Moving Ticker */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    
+                    {/* Card 1: Mes Leads Validés */}
+                    <div className={`p-4 bg-slate-50/80 rounded-2xl border transition-all duration-300 ${
+                      pulsingStat === 'promoter-lead' ? 'border-emerald-400 bg-emerald-50/30 scale-[1.02]' : 'border-slate-100'
+                    }`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-slate-500">
+                          {isAr ? 'الليدات المحققة' : 'Mes Leads Validés'}
+                        </span>
+                        <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          +92.4%
+                        </span>
+                      </div>
+                      <div className="text-xl sm:text-2xl font-extrabold text-slate-950 font-mono tracking-tight flex items-baseline gap-1.5">
+                        <span>{liveStats.promoterLeads.toLocaleString()}</span>
+                        <span className="text-xs font-bold text-slate-500 font-sans">{isAr ? 'ليد' : 'Leads'}</span>
+                      </div>
+                    </div>
+
+                    {/* Card 2: Clics sur mes Liens */}
+                    <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-slate-500">
+                          {isAr ? 'النقرات على روابطي' : 'Clics Liens (Bio/Story)'}
+                        </span>
+                        <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          +58.1%
+                        </span>
+                      </div>
+                      <div className="text-xl sm:text-2xl font-extrabold text-slate-950 font-mono tracking-tight flex items-baseline gap-1.5">
+                        <span>{liveStats.promoterClicks.toLocaleString()}</span>
+                        <span className="text-xs font-bold text-slate-500 font-sans">{isAr ? 'نقرة' : 'Clics'}</span>
+                      </div>
+                    </div>
+
+                    {/* Card 3: Campagnes Actives */}
+                    <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-slate-500">
+                          {isAr ? 'المتاجر والمنتجات المشترك بها' : 'Campagnes Actives'}
+                        </span>
+                        <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                          {liveStats.promoterActiveOffers} Marques
+                        </span>
+                      </div>
+                      <div className="text-xl sm:text-2xl font-extrabold text-slate-950 font-mono tracking-tight flex items-baseline gap-1.5">
+                        <span>{liveStats.promoterActiveOffers}</span>
+                        <span className="text-xs font-bold text-slate-500 font-sans">{isAr ? 'منتج نشط' : 'Offres'}</span>
+                      </div>
+                    </div>
+
+                    {/* Card 4: Gains Cumulés (MAD) */}
+                    <div className={`p-4 bg-slate-50/80 rounded-2xl border transition-all duration-300 ${
+                      pulsingStat === 'promoter-lead' ? 'border-emerald-400 bg-emerald-50/40 scale-[1.02]' : 'border-slate-100'
+                    }`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-slate-500">
+                          {isAr ? 'أرباحي الإجمالية (د.م)' : 'Gains Cumulés (MAD)'}
+                        </span>
+                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          Dispo RIB
+                        </span>
+                      </div>
+                      <div className="text-xl sm:text-2xl font-extrabold text-emerald-600 font-mono tracking-tight flex items-baseline gap-1.5">
+                        <span>{liveStats.promoterEarningsMAD.toLocaleString()}</span>
+                        <span className="text-xs font-bold text-emerald-700 font-sans">{isAr ? 'د.م' : 'MAD'}</span>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Promoter Status Banner */}
+                  <div className="bg-gradient-to-r from-emerald-50/80 via-teal-50/50 to-slate-50 p-4 rounded-xl border border-emerald-100/70 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                        💰
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900">
+                          {isAr 
+                            ? 'سحب الأرباح متاح ومباشر نحو حسابك البنكي (CIH, Attijari, BCP...)' 
+                            : 'Retrait Instantané vers votre Compte Bancaire Marocain (RIB)'}
+                        </h4>
+                        <p className="text-[11px] text-slate-500">
+                          {isAr 
+                            ? 'تحويل الأرباح في أقل من 24 ساعة بمجرد تسجيل طلبات الشراء عبر رابطك.' 
+                            : 'Paiements réguliers et transparents dès que vos leads atteignent la Thank You Page.'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={onStartPromoter || onNavigateToAffiliate}
+                      className="px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-all cursor-pointer whitespace-nowrap"
+                    >
+                      {isAr ? 'دخول فوري كمسوق' : 'Accéder au Portail Affilié'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
             </div>
           </div>
@@ -311,12 +610,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span>WooCommerce</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200/70 shadow-2xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                <span>Amana & Cathedis COD</span>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200/70 shadow-2xs">
                 <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
-                <span>CIH & Attijari RIB</span>
+                <span>Direct RIB Bank Transfers (CIH, Attijari, BCP)</span>
               </div>
             </div>
           </div>
@@ -325,154 +620,349 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* ========================================================================= */}
-      {/* SECTION 2: QUI SOMMES-NOUS / ABOUT US (Natural public anchor) */}
+      {/* SECTION 2: COMMENT ÇA MARCHE / HOW IT WORKS (Dual Role Tab Switcher) */}
       {/* ========================================================================= */}
-      <section id="section-about" className="py-20 bg-white border-y border-slate-200/70">
+      <section id="section-how-it-works" className="py-20 bg-white border-y border-slate-200/70">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-3 border border-blue-200">
-              <Users className="w-3.5 h-3.5" />
-              <span>{t('about.badge')}</span>
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-3 border border-blue-200/80 shadow-2xs">
+              <Layers className="w-3.5 h-3.5 text-blue-600" />
+              <span>{isAr ? 'كيف يعمل ؟' : 'Comment ça marche ?'}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-950 tracking-tight mb-4">
-              {t('about.title')}
-            </h2>
-            <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-              {t('about.description')}
-            </p>
-          </div>
-
-          {/* 3 Core Pillars */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-slate-50/80 rounded-3xl p-8 border border-slate-200/80 hover:border-blue-300 transition-all card-glow-subtle flex flex-col justify-between group">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-600 flex items-center justify-center font-bold text-xl mb-6 group-hover:scale-110 transition-transform">
-                  🔗
-                </div>
-                <h3 className="text-xl font-bold text-slate-950 mb-3">
-                  {t('about.card1.title')}
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  {t('about.card1.desc')}
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-slate-200/60 flex items-center gap-2 text-xs font-bold text-blue-600">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{isAr ? 'روابط تتبع مخصصة وسريعة rkt.ma' : 'Liens courts rkt.ma ultra-rapides'}</span>
-              </div>
-            </div>
-
-            <div className="bg-slate-50/80 rounded-3xl p-8 border border-slate-200/80 hover:border-indigo-300 transition-all card-glow-subtle flex flex-col justify-between group">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-indigo-600/10 text-indigo-600 flex items-center justify-center font-bold text-xl mb-6 group-hover:scale-110 transition-transform">
-                  📈
-                </div>
-                <h3 className="text-xl font-bold text-slate-950 mb-3">
-                  {t('about.card2.title')}
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  {t('about.card2.desc')}
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-slate-200/60 flex items-center gap-2 text-xs font-bold text-indigo-600">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{isAr ? 'نمو مبني 100% على الأداء والمبيعات' : 'Croissance 100% à la performance'}</span>
-              </div>
-            </div>
-
-            <div className="bg-slate-50/80 rounded-3xl p-8 border border-slate-200/80 hover:border-emerald-300 transition-all card-glow-subtle flex flex-col justify-between group">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-emerald-600/10 text-emerald-600 flex items-center justify-center font-bold text-xl mb-6 group-hover:scale-110 transition-transform">
-                  💳
-                </div>
-                <h3 className="text-xl font-bold text-slate-950 mb-3">
-                  {t('about.card3.title')}
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  {t('about.card3.desc')}
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-slate-200/60 flex items-center gap-2 text-xs font-bold text-emerald-600">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{isAr ? 'تحويل فوري إلى جميع الأبناك المغربية' : 'Virements directs vers tous les RIB marocains'}</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 3: COMMENT ÇA MARCHE / HOW IT WORKS */}
-      {/* ========================================================================= */}
-      <section id="section-how-it-works" className="py-20 bg-[#f8fafc]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold mb-3 border border-indigo-200">
-              <Layers className="w-3.5 h-3.5" />
-              <span>{t('how.badge')}</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-950 tracking-tight mb-4">
-              {t('how.title')}
+              {isAr ? 'نموذج بسيط وسريع: 3 خطوات لبدء مضاعفة الأرباح' : 'Un modèle simple en 3 étapes : générez des leads, encaissez'}
             </h2>
             <p className="text-base sm:text-lg text-slate-600">
-              {t('how.subtitle')}
+              {isAr ? 'اختر دورك واكتشف كيف يعمل نظام التتبع والدفع المباشر' : 'Sélectionnez votre profil pour découvrir le flux 100% automatisé'}
             </p>
           </div>
 
-          {/* 4 Step Process Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Interactive Dual Role Switcher Tabs */}
+          <div className="flex justify-center mb-12">
+            <div className="inline-flex p-1.5 rounded-2xl bg-slate-100 border border-slate-200/80 shadow-inner">
+              <button
+                type="button"
+                onClick={() => setHowRole('seller')}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  howRole === 'seller'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                }`}
+              >
+                <Building2 className="w-4 h-4" />
+                <span>{isAr ? 'Pour les Vendeurs / أصحاب المتاجر' : 'Pour les Vendeurs / Merchants'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setHowRole('promoter')}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  howRole === 'promoter'
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                }`}
+              >
+                <TrendingUp className="w-4 h-4" />
+                <span>{isAr ? 'Pour les Affiliés / للمسوقين' : 'Pour les Affiliés / Promoters'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Dynamic 3 Steps Layout */}
+          {howRole === 'seller' ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-300">
+              
+              {/* Step 1: Create Link & Set Commission */}
+              <div className="bg-slate-50/80 rounded-3xl p-8 border border-slate-200/90 shadow-xs relative flex flex-col justify-between group hover:border-blue-300 transition-all">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-4xl font-black text-blue-600/20 group-hover:text-blue-600/40 transition-colors">01</span>
+                    <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                      <Link2 className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-950 mb-3">
+                    {isAr ? '1. أنشئ رابطك وحدد عمولتك' : '1. Créez votre lien & fixez votre commission'}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
+                    {isAr 
+                      ? 'أضف منتجك وحدد بحرية العمولة التي تناسبك: من 5 دراهم إلى أكثر من 200 درهم لكل ليد (أو نسبة مئوية % مخصصة حسب هامش ربحك).'
+                      : 'Définissez librement le montant (de 5 DH à 200+ DH par Lead) ou un % personnalisé selon vos marges sur chaque produit.'}
+                  </p>
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs font-bold text-blue-600 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{isAr ? 'عمولة مرنة: 5 DH إلى 200+ DH / Lead' : 'Commissions libres de 5 DH à 200+ DH'}</span>
+                </div>
+              </div>
+
+              {/* Step 2: Share Links with Promoters */}
+              <div className="bg-slate-50/80 rounded-3xl p-8 border border-slate-200/90 shadow-xs relative flex flex-col justify-between group hover:border-indigo-300 transition-all">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-4xl font-black text-indigo-600/20 group-hover:text-indigo-600/40 transition-colors">02</span>
+                    <div className="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+                      <Share2 className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-950 mb-3">
+                    {isAr ? '2. شارك الروابط مع صناع المحتوى' : '2. Partagez avec les promoteurs'}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
+                    {isAr
+                      ? 'أنشئ روابط أفيلييت فريدة (rkt.ma) بنقرة واحدة وشاركها مباشرة مع المؤثرين وصناع المحتوى ليبدأوا الترويج على تيك توك وإنستغرام.'
+                      : 'Générez des liens d’affiliation uniques en 1-clic pour vos créateurs de contenu afin qu\'ils diffusent sur TikTok & Instagram.'}
+                  </p>
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs font-bold text-indigo-600 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{isAr ? 'روابط تتبع مخصصة وسريعة rkt.ma' : 'Liens courts traqués rkt.ma'}</span>
+                </div>
+              </div>
+
+              {/* Step 3: Pay Only per Thank You Page */}
+              <div className="bg-slate-50/80 rounded-3xl p-8 border border-slate-200/90 shadow-xs relative flex flex-col justify-between group hover:border-emerald-300 transition-all">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-4xl font-black text-emerald-600/20 group-hover:text-emerald-600/40 transition-colors">03</span>
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-950 mb-3">
+                    {isAr ? '3. ادفع فقط عند صفحة الشكر (Thank You Page)' : '3. Payez uniquement à la Thank You Page'}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
+                    {isAr
+                      ? 'يسجل البيكسل الليد تلقائياً بمجرد إرسال الزبون للطلب ووصوله لصفحة الشكر. لا تدفع على المشاهدات أو النقرات — 0% ميزانية مهدورة.'
+                      : 'Le Pixel enregistre le Lead dès que le client valide la commande et atteint la page de remerciement. Zéro budget média gaspillé.'}
+                  </p>
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs font-bold text-emerald-600 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{isAr ? '0% مخاطرة إعلانية • دفع على الليد الفعلي' : '0% Risque • Paiement au Lead réel'}</span>
+                </div>
+              </div>
+
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-300">
+              
+              {/* Step 1: Pick a Brand */}
+              <div className="bg-slate-50/80 rounded-3xl p-8 border border-slate-200/90 shadow-xs relative flex flex-col justify-between group hover:border-emerald-300 transition-all">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-4xl font-black text-emerald-600/20 group-hover:text-emerald-600/40 transition-colors">01</span>
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                      <Search className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-950 mb-3">
+                    {isAr ? '1. اختر متجراً أو منتجاً' : '1. Choisissez une boutique'}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
+                    {isAr
+                      ? 'تصفح قائمة العلامات التجارية والمتاجر، وتأكد من قيمة العمولة المحددة من البائع (من 5 إلى أكثر من 200 درهم لكل ليد) واحصل على رابطك الخاص.'
+                      : 'Sélectionnez une marque partenaire, vérifiez la commission fixée par le vendeur (de 5 DH à 200+ DH/lead) et récupérez votre lien personnalisé.'}
+                  </p>
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs font-bold text-emerald-600 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{isAr ? 'عشرات المتاجر المغربية الجاهزة' : 'Marques e-commerce actives'}</span>
+                </div>
+              </div>
+
+              {/* Step 2: Promote Anywhere */}
+              <div className="bg-slate-50/80 rounded-3xl p-8 border border-slate-200/90 shadow-xs relative flex flex-col justify-between group hover:border-blue-300 transition-all">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-4xl font-black text-blue-600/20 group-hover:text-blue-600/40 transition-colors">02</span>
+                    <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                      <Share2 className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-950 mb-3">
+                    {isAr ? '2. روّج للمنتج مع جمهورك' : '2. Promouvez le produit'}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
+                    {isAr
+                      ? 'شارك رابطك في البايو على تيك توك، ستوريات إنستغرام، يوتيوب أو عبر مجموعات واتساب وإعلاناتك المباشرة.'
+                      : 'Partagez votre lien traqué avec votre communauté sur TikTok, Instagram, WhatsApp ou via vos propres campagnes sponsorisées.'}
+                  </p>
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs font-bold text-blue-600 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{isAr ? 'روابط متوافقة تماماً مع منصات التواصل' : 'Optimisé Bio Instagram & TikTok'}</span>
+                </div>
+              </div>
+
+              {/* Step 3: Track & Get Paid */}
+              <div className="bg-slate-50/80 rounded-3xl p-8 border border-slate-200/90 shadow-xs relative flex flex-col justify-between group hover:border-purple-300 transition-all">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-4xl font-black text-purple-600/20 group-hover:text-purple-600/40 transition-colors">03</span>
+                    <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+                      <BadgeDollarSign className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-950 mb-3">
+                    {isAr ? '3. احصل على عمولتك مع كل ليد' : '3. Encaissez à chaque Lead'}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
+                    {isAr
+                      ? 'اربح العمولة المحددة فور وصول العميل لصفحة الشكر (Thank You Page). اسحب أرباحك في أي وقت مباشرة إلى حسابك البنكي المغربي RIB.'
+                      : 'Gagnez la commission fixée par le vendeur à chaque "Thank You Page" atteinte. Retrait rapide direct vers votre compte bancaire marocain (RIB).'}
+                  </p>
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs font-bold text-purple-600 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{isAr ? 'تحويل بنكي مباشر (CIH, Attijari, BCP)' : 'Paiements directs RIB en Dirhams'}</span>
+                </div>
+              </div>
+
+            </div>
+          )}
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* SECTION 3: ROKETLEAD VS META ADS (High-Converting Comparison Matrix) */}
+      {/* ========================================================================= */}
+      <section className="py-20 bg-[#f8fafc]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="text-center max-w-3xl mx-auto mb-14">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-3 border border-blue-200/80 shadow-2xs">
+              <Scale className="w-3.5 h-3.5 text-blue-600" />
+              <span>{isAr ? 'مقارنة الأداء والفعالية' : 'Comparatif de Performance'}</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-950 tracking-tight mb-4">
+              {isAr ? 'RoketLead مقابل إعلانات Meta Ads (فيسبوك وإنستغرام)' : 'RoketLead vs Meta Ads (Facebook & Instagram)'}
+            </h2>
+            <p className="text-base sm:text-lg text-slate-600">
+              {isAr ? 'لماذا يعد التسويق بالعمولة على صفحة الشكر البديل الأكثر أماناً وربحية لمتجرك في المغرب' : 'Pourquoi payer pour des clics inutiles quand vous pouvez payer uniquement au résultat ?'}
+            </p>
+          </div>
+
+          {/* Comparison Matrix Table / Cards */}
+          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl overflow-hidden">
             
-            {/* Step 1 */}
-            <div className="bg-white rounded-3xl p-7 border border-slate-200/80 shadow-xs relative flex flex-col justify-between">
-              <div>
-                <span className="text-4xl font-black text-blue-600/20 block mb-4">01</span>
-                <h4 className="text-lg font-bold text-slate-950 mb-2">{t('how.step1.title')}</h4>
-                <p className="text-xs text-slate-600 leading-relaxed">{t('how.step1.desc')}</p>
+            {/* Table Header */}
+            <div className="grid grid-cols-1 md:grid-cols-12 bg-slate-900 text-white p-6 sm:p-8 items-center border-b border-slate-800">
+              <div className="md:col-span-4 text-slate-300 font-bold text-sm uppercase tracking-wider mb-2 md:mb-0">
+                {isAr ? 'معيار المقارنة والتكلفة' : 'Critères de Rentabilité'}
               </div>
-              <div className="mt-6 pt-4 border-t border-slate-100 text-[11px] font-semibold text-blue-600">
-                rkt.ma • YouCan • Shopify • WooCommerce
+              <div className="md:col-span-4 text-rose-400 font-extrabold text-base flex items-center gap-2 mb-2 md:mb-0">
+                <span className="p-1 rounded-lg bg-rose-500/20 text-rose-400">❌</span>
+                <span>Meta Ads (Facebook / Instagram)</span>
               </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="bg-white rounded-3xl p-7 border border-slate-200/80 shadow-xs relative flex flex-col justify-between">
-              <div>
-                <span className="text-4xl font-black text-indigo-600/20 block mb-4">02</span>
-                <h4 className="text-lg font-bold text-slate-950 mb-2">{t('how.step2.title')}</h4>
-                <p className="text-xs text-slate-600 leading-relaxed">{t('how.step2.desc')}</p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-slate-100 text-[11px] font-semibold text-indigo-600">
-                rkt.ma/c/... • Instagram • TikTok • YouTube
+              <div className="md:col-span-4 text-blue-400 font-extrabold text-base flex items-center gap-2">
+                <span className="p-1 rounded-lg bg-blue-500/20 text-blue-400">🚀</span>
+                <span>RoketLead (Affiliation au Lead)</span>
               </div>
             </div>
 
-            {/* Step 3 */}
-            <div className="bg-white rounded-3xl p-7 border border-slate-200/80 shadow-xs relative flex flex-col justify-between">
-              <div>
-                <span className="text-4xl font-black text-emerald-600/20 block mb-4">03</span>
-                <h4 className="text-lg font-bold text-slate-950 mb-2">{t('how.step3.title')}</h4>
-                <p className="text-xs text-slate-600 leading-relaxed">{t('how.step3.desc')}</p>
+            {/* Rows */}
+            <div className="divide-y divide-slate-100 text-sm">
+              
+              {/* Row 1: CPM */}
+              <div className="grid grid-cols-1 md:grid-cols-12 p-6 sm:p-7 items-center hover:bg-slate-50/80 transition-colors gap-3 md:gap-0">
+                <div className="md:col-span-4">
+                  <span className="font-extrabold text-slate-900 block text-base">CPM (Coût par 1 000 Impressions)</span>
+                  <span className="text-xs text-slate-500">{isAr ? 'تكلفة ظهور الإعلان لـ 1000 شخص' : 'Affichage des publicités sans garantie de vente'}</span>
+                </div>
+                <div className="md:col-span-4 text-slate-700 flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
+                  <span>{isAr ? 'تدفع على المشاهدات حتى لو لم يشتر أحد' : 'Payez pour des vues sans garantie d’achat'}</span>
+                </div>
+                <div className="md:col-span-4 font-bold text-blue-600 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                  <span className="text-base font-extrabold">{isAr ? '0 درهم (مشاهدات مجانية)' : '0 DH (Impressions 100% Gratuites)'}</span>
+                </div>
               </div>
-              <div className="mt-6 pt-4 border-t border-slate-100 text-[11px] font-semibold text-emerald-600">
-                {isAr ? 'تتبع فوري ومباشر للمبيعات' : 'Attribution Pixel & Suivi en Temps Réel'}
+
+              {/* Row 2: CPC */}
+              <div className="grid grid-cols-1 md:grid-cols-12 p-6 sm:p-7 items-center hover:bg-slate-50/80 transition-colors bg-slate-50/30 gap-3 md:gap-0">
+                <div className="md:col-span-4">
+                  <span className="font-extrabold text-slate-900 block text-base">CPC (Coût par Clic)</span>
+                  <span className="text-xs text-slate-500">{isAr ? 'تكلفة النقرات العشوائية' : 'Visiteurs qui quittent votre boutique en 3s'}</span>
+                </div>
+                <div className="md:col-span-4 text-slate-700 flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
+                  <span>{isAr ? 'تدفع على النقرات غير المجدية أو الخاطئة' : 'Payez pour des clics inutiles ou accidentels'}</span>
+                </div>
+                <div className="md:col-span-4 font-bold text-blue-600 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                  <span className="text-base font-extrabold">{isAr ? '0 درهم (زيارات وترافيك مجاني)' : '0 DH (Trafic 100% Gratuit)'}</span>
+                </div>
               </div>
+
+              {/* Row 3: CPA & Risk */}
+              <div className="grid grid-cols-1 md:grid-cols-12 p-6 sm:p-7 items-center hover:bg-slate-50/80 transition-colors gap-3 md:gap-0">
+                <div className="md:col-span-4">
+                  <span className="font-extrabold text-slate-900 block text-base">CPA & Risque Financier</span>
+                  <span className="text-xs text-slate-500">{isAr ? 'المخاطرة بميزانيتك الإعلانية' : 'Gaspillage de budget sans retour garanti'}</span>
+                </div>
+                <div className="md:col-span-4 text-slate-700 flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
+                  <span>{isAr ? '100% مخاطرة عليك إذا لم تنجح الحملة' : '100% du risque sur votre trésorerie'}</span>
+                </div>
+                <div className="md:col-span-4 font-bold text-emerald-600 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                  <span className="text-base font-extrabold">{isAr ? '0% مخاطرة (دفع فقط على الليد المحقق)' : '0% Risque (Paiement au Lead validé)'}</span>
+                </div>
+              </div>
+
+              {/* Row 4: Taxe Publicitaire (TVA) */}
+              <div className="grid grid-cols-1 md:grid-cols-12 p-6 sm:p-7 items-center hover:bg-slate-50/80 transition-colors bg-slate-50/30 gap-3 md:gap-0">
+                <div className="md:col-span-4">
+                  <span className="font-extrabold text-slate-900 block text-base">Taxe Pub / TVA Publicité</span>
+                  <span className="text-xs text-slate-500">{isAr ? 'الضرائب المفروضة على الإعلانات الأجنبية' : 'Taxes sur les budgets publicitaires internationaux'}</span>
+                </div>
+                <div className="md:col-span-4 text-slate-700 flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
+                  <span>{isAr ? '+20% ضريبة إعلانات إضافية إجبارية' : 'Taxe publicitaire obligatoire (+20%)'}</span>
+                </div>
+                <div className="md:col-span-4 font-bold text-blue-600 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                  <span className="text-base font-extrabold">{isAr ? '0 درهم ضريبة إعلانات إضافية' : '0 DH de taxe pub supplémentaire'}</span>
+                </div>
+              </div>
+
+              {/* Row 5: Déclencheur de Paiement (Trigger) */}
+              <div className="grid grid-cols-1 md:grid-cols-12 p-6 sm:p-7 items-center hover:bg-slate-50/80 transition-colors bg-blue-50/30 gap-3 md:gap-0">
+                <div className="md:col-span-4">
+                  <span className="font-extrabold text-slate-900 block text-base">Condition de Paiement</span>
+                  <span className="text-xs text-slate-500">{isAr ? 'متى يخرج المال من جيبك ؟' : 'Moment exact du prélèvement'}</span>
+                </div>
+                <div className="md:col-span-4 text-slate-700 flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
+                  <span>{isAr ? 'تدفع مقدماً لـ Meta قبل رؤية أي نتيجة' : 'Payez d\'avance à Meta avant tout résultat'}</span>
+                </div>
+                <div className="md:col-span-4 font-bold text-blue-700 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                  <span className="text-sm font-extrabold">
+                    {isAr 
+                      ? 'خلص غير فاش يوصل الزبون لـ Thank You Page' 
+                      : 'Payez UNIQUEMENT quand un Lead atteint votre Thank You Page'}
+                  </span>
+                </div>
+              </div>
+
             </div>
 
-            {/* Step 4 */}
-            <div className="bg-white rounded-3xl p-7 border border-slate-200/80 shadow-xs relative flex flex-col justify-between">
-              <div>
-                <span className="text-4xl font-black text-rose-600/20 block mb-4">04</span>
-                <h4 className="text-lg font-bold text-slate-950 mb-2">{t('how.step4.title')}</h4>
-                <p className="text-xs text-slate-600 leading-relaxed">{t('how.step4.desc')}</p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-slate-100 text-[11px] font-semibold text-rose-600">
-                CIH • Attijariwafa • Chaabi (RIB)
-              </div>
-            </div>
+          </div>
 
+          <div className="mt-8 text-center">
+            <button
+              onClick={onStartSeller || onNavigateToMerchant || onNavigateToAffiliate}
+              className="px-8 py-3.5 text-sm sm:text-base font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg shadow-blue-600/30 transition-all cursor-pointer inline-flex items-center gap-2"
+            >
+              <span>{isAr ? 'ابدأ التسويق بدون مخاطرة مع روكيت ليد' : 'Passer à l’Affiliation RoketLead sans Risque'}</span>
+              <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
+            </button>
           </div>
 
         </div>
@@ -539,9 +1029,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div>
                     <div className="flex items-start justify-between gap-3 mb-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-2xl shadow-2xs">
-                          {merchant.logo}
-                        </div>
+                        <StoreLogo
+                          logo={merchant.logo}
+                          name={merchant.companyName}
+                          category={merchant.category}
+                          size="lg"
+                        />
                         <div>
                           <div className="flex items-center gap-1.5">
                             <h4 className="font-bold text-slate-950 text-base">{merchant.companyName}</h4>
@@ -692,10 +1185,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
                     <div className="flex justify-between items-center mb-2">
                       <label className="text-sm font-medium text-slate-300">
-                        {isAr ? 'متوسط المبيعات المحققة لكل مسوق / شهر' : 'Ventes générées par promoteur / mois'}
+                        {isAr ? 'متوسط الليدات والمبيعات لكل مسوق / شهر' : 'Leads générés par promoteur / mois'}
                       </label>
                       <span className="text-lg font-bold text-purple-400">
-                        {salesPerAffiliateMonth} {isAr ? 'مبيعة' : 'ventes'}
+                        {salesPerAffiliateMonth} {isAr ? 'ليد' : 'leads'}
                       </span>
                     </div>
                     <input
@@ -720,12 +1213,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     {estimatedMonthlyVolumeMAD.toLocaleString()} <span className="text-sm font-bold text-blue-300">{isAr ? 'د.م' : 'MAD'}</span>
                   </div>
                   <p className="text-xs text-slate-400 mb-6">
-                    {isAr ? `توليد حوالي ${estimatedMonthlyOrders.toLocaleString()} مبيعة جديدة شهرياً عبر قناة التسويق بالعمولة.` : `Générant environ ${estimatedMonthlyOrders.toLocaleString()} nouvelles ventes d’affiliation par mois.`}
+                    {isAr ? `توليد حوالي ${estimatedMonthlyOrders.toLocaleString()} ليد جديد شهرياً عبر صفحة الشكر (Thank You Page).` : `Générant environ ${estimatedMonthlyOrders.toLocaleString()} nouveaux Leads qualifiés par mois.`}
                   </p>
 
                   <div className="bg-black/30 rounded-xl p-4 space-y-2 text-left text-xs mb-6 border border-white/5" dir="ltr">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Commissions Affiliés (12%):</span>
+                      <span className="text-slate-400">Commissions Affiliés (~12%):</span>
                       <span className="font-bold text-slate-200">{estimatedAffiliatePayoutMAD.toLocaleString()} MAD</span>
                     </div>
                     <div className="flex justify-between pt-2 border-t border-white/10 font-bold">
@@ -735,7 +1228,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </div>
 
                   <button
-                    onClick={onNavigateToMerchant || onNavigateToAffiliate}
+                    onClick={onStartSeller || onNavigateToMerchant || onNavigateToAffiliate}
                     className="w-full py-3 text-sm font-bold text-slate-950 bg-white hover:bg-slate-100 rounded-xl shadow-lg transition-all cursor-pointer"
                   >
                     {isAr ? 'إطلاق برنامجك الآن' : 'Lancer le Programme Vendeur'}
@@ -978,21 +1471,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
               <div>
                 <div className="font-bold text-slate-900 mb-3 uppercase tracking-wider text-[11px]">
-                  {isAr ? 'الدعم الفني' : 'Support & Admin'}
+                  {isAr ? 'الدعم الفني' : 'Support'}
                 </div>
                 <ul className="space-y-2 text-slate-600">
                   <li><a href="#section-contact" className="hover:text-blue-600">{t('nav.contact')}</a></li>
                   <li><a href="https://wa.me/212661984210" target="_blank" rel="noreferrer" className="hover:text-emerald-600">WhatsApp Support</a></li>
-                  <li className="pt-2 border-t border-slate-100">
-                    <button 
-                      id="footer-admin-login-link"
-                      onClick={onNavigateToAdmin} 
-                      className="text-slate-400 hover:text-purple-700 flex items-center gap-1 font-mono text-[11px] cursor-pointer"
-                    >
-                      <Lock className="w-3 h-3" />
-                      <span>/admin/login</span>
-                    </button>
-                  </li>
                 </ul>
               </div>
             </div>

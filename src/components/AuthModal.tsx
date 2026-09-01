@@ -21,6 +21,7 @@ import {
 import { MerchantProfile, AffiliateProfile } from '../types';
 import { INITIAL_MERCHANTS, INITIAL_AFFILIATE_PROFILE } from '../data/mockData';
 import { useLanguage } from '../context/LanguageContext';
+import { StoreLogo } from './StoreLogo';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -337,23 +338,39 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <button
                     type="button"
                     onClick={() => handleQuickDemoSeller(INITIAL_MERCHANTS[1])}
-                    className="p-2 text-left bg-slate-50 hover:bg-indigo-50/60 border border-slate-200/80 rounded-xl transition-colors cursor-pointer group"
+                    className="p-2 text-left bg-slate-50 hover:bg-indigo-50/60 border border-slate-200/80 rounded-xl transition-colors cursor-pointer group flex items-center gap-2"
                   >
-                    <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 flex items-center gap-1 truncate">
-                      <span>👑</span> Caftan Royal
+                    <StoreLogo
+                      logo={INITIAL_MERCHANTS[1].logo}
+                      name={INITIAL_MERCHANTS[1].companyName}
+                      category={INITIAL_MERCHANTS[1].category}
+                      size="sm"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 truncate">
+                        Caftan Royal
+                      </div>
+                      <div className="text-[10px] text-slate-500 truncate">Shopify • Casablanca</div>
                     </div>
-                    <div className="text-[10px] text-slate-500 truncate">Shopify • Casablanca</div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleQuickDemoSeller(INITIAL_MERCHANTS[0])}
-                    className="p-2 text-left bg-slate-50 hover:bg-indigo-50/60 border border-slate-200/80 rounded-xl transition-colors cursor-pointer group"
+                    className="p-2 text-left bg-slate-50 hover:bg-indigo-50/60 border border-slate-200/80 rounded-xl transition-colors cursor-pointer group flex items-center gap-2"
                   >
-                    <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 flex items-center gap-1 truncate">
-                      <span>🌿</span> Atlas Botanicals
+                    <StoreLogo
+                      logo={INITIAL_MERCHANTS[0].logo}
+                      name={INITIAL_MERCHANTS[0].companyName}
+                      category={INITIAL_MERCHANTS[0].category}
+                      size="sm"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 truncate">
+                        Atlas Botanicals
+                      </div>
+                      <div className="text-[10px] text-slate-500 truncate">YouCan • Agadir</div>
                     </div>
-                    <div className="text-[10px] text-slate-500 truncate">YouCan • Agadir</div>
                   </button>
                 </div>
               </div>
