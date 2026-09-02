@@ -60,6 +60,18 @@ export default function App() {
   }, []);
 
   const handleNavigateView = (view: 'landing' | 'admin' | 'merchant' | 'affiliate' | 'earlyaccess') => {
+    if (view === 'merchant' && currentUserRole !== 'MERCHANT') {
+      handleOpenSignIn('seller');
+      return;
+    }
+    if (view === 'affiliate' && currentUserRole !== 'AFFILIATE') {
+      handleOpenSignIn('promoter');
+      return;
+    }
+    if (view === 'admin' && currentUserRole !== 'SUPER_ADMIN') {
+      setIsAdminLoginOpen(true);
+      return;
+    }
     setCurrentView(view);
     if (view === 'earlyaccess') {
       window.history.pushState({}, '', '/earlyaccess');
@@ -108,8 +120,11 @@ export default function App() {
 
   const handleSelectMerchant = (merchant: MerchantProfile) => {
     setActiveMerchant(merchant);
-    setCurrentUserRole('AFFILIATE');
-    setCurrentView('affiliate');
+    if (currentUserRole !== 'AFFILIATE') {
+      handleOpenSignIn('promoter');
+    } else {
+      setCurrentView('affiliate');
+    }
   };
 
   return (

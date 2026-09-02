@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { 
   Building2, 
   TrendingUp, 
@@ -9,14 +9,12 @@ import {
   Clock, 
   AlertCircle, 
   XCircle, 
-  Truck, 
   Key, 
   Code, 
   Copy, 
   Check, 
   ExternalLink, 
   Plus, 
-  Edit3, 
   Search, 
   Filter, 
   Tag, 
@@ -33,26 +31,64 @@ import {
   Sparkles,
   Zap,
   RotateCcw,
-  Database,
-  CheckCircle
+  CheckCircle,
+  FileText,
+  UploadCloud,
+  Send,
+  Sliders,
+  HelpCircle,
+  Share2,
+  Calendar,
+  Lock,
+  Smartphone,
+  CreditCard,
+  Percent,
+  CheckCheck,
+  ShieldAlert,
+  ArrowUpRight,
+  Eye,
+  FileSpreadsheet,
+  Edit3,
+  Camera,
+  User,
+  Image as ImageIcon,
+  X
 } from 'lucide-react';
+import { 
+  AreaChart, 
+  Area, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
+} from 'recharts';
+import confetti from 'canvas-confetti';
 import { 
   MerchantProfile, 
   Campaign, 
-  Conversion, 
   PromoCode, 
-  TrackingStatus, 
-  CommissionType 
+  CommissionType,
+  CreatorDiscoveryItem,
+  ContentAsset,
+  EscrowWallet,
+  LeadValidationItem,
+  WithdrawalRequest
 } from '../types';
 import { 
   INITIAL_MERCHANTS, 
-  INITIAL_CONVERSIONS, 
-  INITIAL_PROMO_CODES 
+  INITIAL_PROMO_CODES,
+  INITIAL_CREATORS,
+  INITIAL_CONTENT_ASSETS,
+  INITIAL_ESCROW_WALLET,
+  INITIAL_LEAD_VALIDATIONS,
+  INITIAL_PAYOUT_REQUESTS,
+  MOROCCAN_BANKS
 } from '../data/mockData';
 import { TRACKER_JS_CODE } from '../integrations/trackerSource';
 import { WOOCOMMERCE_PLUGIN_CODE } from '../integrations/woocommercePluginSource';
-import { WEBHOOK_HANDLER_TS_CODE } from '../integrations/webhookHandlerSource';
-import { PrismaSchemaViewer } from './PrismaSchemaViewer';
 import { useLanguage } from '../context/LanguageContext';
 import { StoreLogo } from './StoreLogo';
 
@@ -60,6 +96,16 @@ interface MerchantDashboardProps {
   onSwitchToAffiliateView?: () => void;
   onSwitchToAdminView?: () => void;
 }
+
+const PERFORMANCE_DATA_7D = [
+  { day: 'Lun 26', clicks: 1420, leads: 48, rate: '3.38%', spendMAD: 1680 },
+  { day: 'Mar 27', clicks: 1890, leads: 64, rate: '3.39%', spendMAD: 2240 },
+  { day: 'Mer 28', clicks: 2150, leads: 76, rate: '3.53%', spendMAD: 2660 },
+  { day: 'Jeu 29', clicks: 2400, leads: 82, rate: '3.41%', spendMAD: 2870 },
+  { day: 'Ven 30', clicks: 2890, leads: 98, rate: '3.39%', spendMAD: 3430 },
+  { day: 'Sam 31', clicks: 3120, leads: 114, rate: '3.65%', spendMAD: 3990 },
+  { day: 'Dim 01', clicks: 2650, leads: 89, rate: '3.35%', spendMAD: 3115 },
+];
 
 export const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   onSwitchToAffiliateView,
@@ -72,89 +118,134 @@ export const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   const [merchants, setMerchants] = useState<MerchantProfile[]>(INITIAL_MERCHANTS);
   const [selectedMerchantId, setSelectedMerchantId] = useState<string>('merch-01');
 
-  // Active Tab: overview | orders | campaigns | api-setup | code-suite | prisma-schema
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'campaigns' | 'api-setup' | 'code-suite' | 'prisma-schema'>('overview');
+  // 6 Core Modules: overview | creators | campaigns | lead-validation | content-library | payments
+  const [activeTab, setActiveTab] = useState<'overview' | 'creators' | 'campaigns' | 'lead-validation' | 'content-library' | 'payments' | 'pixel'>('overview');
 
-  // Orders State
-  const [conversions, setConversions] = useState<Conversion[]>(INITIAL_CONVERSIONS);
-  const [orderSearchQuery, setOrderSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [actionSuccessToast, setActionSuccessToast] = useState<string | null>(null);
+  // Lead Validation / Anti-Fraud State
+  const [leads, setLeads] = useState<LeadValidationItem[]>(INITIAL_LEAD_VALIDATIONS);
+  const [leadSearch, setLeadSearch] = useState('');
+  const [leadStatusFilter, setLeadStatusFilter] = useState<string>('ALL');
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const [activeLeadForFlag, setActiveLeadForFlag] = useState<LeadValidationItem | null>(null);
+  const [flagReason, setFlagReason] = useState('Numéro non joignable / faux lead bot');
 
-  // Promo Codes State
+  // Creator Marketplace State
+  const [creators, setCreators] = useState<CreatorDiscoveryItem[]>(INITIAL_CREATORS);
+  const [creatorSearch, setCreatorSearch] = useState('');
+  const [selectedNiche, setSelectedNiche] = useState<string>('ALL');
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('ALL');
+  const [invitingCreator, setInvitingCreator] = useState<CreatorDiscoveryItem | null>(null);
+  const [inviteMessage, setInviteMessage] = useState('');
+  const [inviteCommissionMAD, setInviteCommissionMAD] = useState(35);
+
+  // Content Library State
+  const [assets, setAssets] = useState<ContentAsset[]>(INITIAL_CONTENT_ASSETS);
+  const [assetCategoryFilter, setAssetCategoryFilter] = useState<string>('ALL');
+  const [isUploadAssetModalOpen, setIsUploadAssetModalOpen] = useState(false);
+  const [newAssetTitle, setNewAssetTitle] = useState('');
+  const [newAssetCategory, setNewAssetCategory] = useState<ContentAsset['category']>('High-Res Photos');
+  const [newAssetDescription, setNewAssetDescription] = useState('');
+
+  // Escrow & Payments State
+  const [escrowWallet, setEscrowWallet] = useState<EscrowWallet>(INITIAL_ESCROW_WALLET);
+  const [payouts, setPayouts] = useState<WithdrawalRequest[]>(INITIAL_PAYOUT_REQUESTS);
+  const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
+  const [topUpAmountMAD, setTopUpAmountMAD] = useState(10000);
+
+  // Campaigns & Links State
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>(INITIAL_PROMO_CODES);
+  const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
+  const [campaignTitle, setCampaignTitle] = useState('');
+  const [campaignLandingUrl, setCampaignLandingUrl] = useState('https://atlasbotanicals.ma/products/serum-argan');
+  const [commissionType, setCommissionType] = useState<CommissionType>('FIXED_MAD');
+  const [commissionVal, setCommissionVal] = useState(35);
+  const [holdPeriodSetting, setHoldPeriodSetting] = useState(48);
+  const [assignedPromoterName, setAssignedPromoterName] = useState('Amine Benjelloun');
 
-  // Code Suite Sub-Tab
-  const [codeTab, setCodeTab] = useState<'tracker' | 'woocommerce' | 'webhook'>('tracker');
+  // Link Generator Tool
+  const [linkChannel, setLinkChannel] = useState<'Instagram' | 'TikTok' | 'WhatsApp' | 'YouTube'>('Instagram');
+  const [linkSlug, setLinkSlug] = useState('amine-argan');
+  const [generatedShortLink, setGeneratedShortLink] = useState('rkt.ma/c/amine-argan');
+
+  // Pixel / Integrations Code Tab
+  const [pixelCodeTab, setPixelCodeTab] = useState<'tracker' | 'woocommerce'>('tracker');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [showSecretKey, setShowSecretKey] = useState(false);
 
-  // Campaign Modal State
-  const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
-  const [campaignTitle, setCampaignTitle] = useState('');
-  const [commissionType, setCommissionType] = useState<CommissionType>('PERCENTAGE');
-  const [commissionVal, setCommissionVal] = useState(15);
-  const [cookieDays, setCookieDays] = useState(30);
-  const [promoCodeInput, setPromoCodeInput] = useState('');
-  const [assignedPromoter, setAssignedPromoter] = useState('Sarah El Amrani');
+  // Toast Feedback
+  const [actionSuccessToast, setActionSuccessToast] = useState<string | null>(null);
 
-  // Webhook Simulator State
-  const [simulatedStatus, setSimulatedStatus] = useState<'DELIVERED' | 'CANCELLED' | 'RETURNED'>('DELIVERED');
-  const [simulatedOrderNum, setSimulatedOrderNum] = useState('MA-98244');
-  const [simulatedCourier, setSimulatedCourier] = useState('Amana Express');
-  const [simulationResponse, setSimulationResponse] = useState<any | null>(null);
-  const [isSimulating, setIsSimulating] = useState(false);
-
-  // Current selected merchant
+  // Selected Merchant
   const currentMerchant = useMemo(() => {
     return merchants.find(m => m.id === selectedMerchantId) || merchants[0];
   }, [merchants, selectedMerchantId]);
 
-  // Merchant specific conversions
-  const merchantConversions = useMemo(() => {
-    return conversions.filter(c => c.merchantId === currentMerchant.id);
-  }, [conversions, currentMerchant.id]);
+  // Merchant Store Profile Edit State
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+  const [isEditStoreModalOpen, setIsEditStoreModalOpen] = useState(false);
+  const [editStoreName, setEditStoreName] = useState(currentMerchant.storeName);
+  const [editCategory, setEditCategory] = useState(currentMerchant.category);
+  const [editCity, setEditCity] = useState(currentMerchant.city);
+  const [editWebsite, setEditWebsite] = useState(currentMerchant.website);
+  const [editPhone, setEditPhone] = useState(currentMerchant.supportPhone || '+212 5 22 34 56 78');
+  const [editLogoUrl, setEditLogoUrl] = useState(currentMerchant.logoUrl || '');
+  const [editDefaultPayoutMAD, setEditDefaultPayoutMAD] = useState(currentMerchant.defaultPayoutMAD);
+  const [editHoldPeriodHours, setEditHoldPeriodHours] = useState(currentMerchant.holdPeriodHours || 48);
 
-  // Calculations for Key Metrics
-  const grossAffiliateSales = useMemo(() => {
-    return merchantConversions.reduce((sum, c) => sum + c.orderAmountMAD, 0);
-  }, [merchantConversions]);
+  const handleOpenEditStore = () => {
+    setEditStoreName(currentMerchant.storeName);
+    setEditCategory(currentMerchant.category);
+    setEditCity(currentMerchant.city);
+    setEditWebsite(currentMerchant.website);
+    setEditPhone(currentMerchant.supportPhone || '+212 5 22 34 56 78');
+    setEditLogoUrl(currentMerchant.logoUrl || '');
+    setEditDefaultPayoutMAD(currentMerchant.defaultPayoutMAD);
+    setEditHoldPeriodHours(currentMerchant.holdPeriodHours || 48);
+    setIsEditStoreModalOpen(true);
+  };
 
-  const totalCommissionsOwed = useMemo(() => {
-    return merchantConversions
-      .filter(c => c.status === 'DELIVERED' || c.status === 'PENDING')
-      .reduce((sum, c) => sum + c.commissionMAD, 0);
-  }, [merchantConversions]);
+  const handleSaveStoreProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    setMerchants(prev => prev.map(m => {
+      if (m.id === currentMerchant.id) {
+        return {
+          ...m,
+          storeName: editStoreName,
+          category: editCategory,
+          city: editCity,
+          website: editWebsite,
+          supportPhone: editPhone,
+          logoUrl: editLogoUrl,
+          defaultPayoutMAD: editDefaultPayoutMAD,
+          holdPeriodHours: editHoldPeriodHours
+        };
+      }
+      return m;
+    }));
+    setIsEditStoreModalOpen(false);
+    showToast('Profil de la boutique et logo mis à jour avec succès !');
+  };
 
-  const pendingVerificationCount = useMemo(() => {
-    return merchantConversions.filter(c => c.status === 'PENDING' || c.status === 'CONFIRMED').length;
-  }, [merchantConversions]);
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Image trop volumineuse (max 5 Mo)');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditLogoUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-  const deliveredCount = useMemo(() => {
-    return merchantConversions.filter(c => c.status === 'DELIVERED').length;
-  }, [merchantConversions]);
-
-  const deliveryRatePercent = useMemo(() => {
-    if (merchantConversions.length === 0) return 92;
-    const resolved = merchantConversions.filter(c => ['DELIVERED', 'CANCELLED', 'RETURNED'].includes(c.status));
-    if (resolved.length === 0) return 90;
-    return Math.round((deliveredCount / resolved.length) * 100);
-  }, [merchantConversions, deliveredCount]);
-
-  // Filtered Orders
-  const filteredOrders = useMemo(() => {
-    return merchantConversions.filter(order => {
-      const matchesSearch = 
-        order.orderNumber.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
-        order.customerCity.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
-        order.affiliateName.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
-        (order.promoCode && order.promoCode.toLowerCase().includes(orderSearchQuery.toLowerCase())) ||
-        (order.trackingNumber && order.trackingNumber.toLowerCase().includes(orderSearchQuery.toLowerCase()));
-      
-      const matchesStatus = statusFilter === 'ALL' || order.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [merchantConversions, orderSearchQuery, statusFilter]);
+  // Toast Helper
+  const showToast = (msg: string) => {
+    setActionSuccessToast(msg);
+    setTimeout(() => setActionSuccessToast(null), 4000);
+  };
 
   // Copy helper
   const handleCopy = (text: string, label: string) => {
@@ -163,1131 +254,1923 @@ export const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     setTimeout(() => setCopiedKey(null), 2500);
   };
 
-  // Download helper for scripts
-  const handleDownloadFile = (content: string, filename: string) => {
-    const element = document.createElement('a');
-    const file = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    element.href = URL.createObjectURL(file);
-    element.download = filename;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+  // Lead Validation Actions
+  const handleApproveLead = (leadId: string) => {
+    setLeads(prev => prev.map(l => {
+      if (l.id === leadId) {
+        return { ...l, status: 'APPROVED' };
+      }
+      return l;
+    }));
+    confetti({ particleCount: 40, spread: 60, origin: { y: 0.8 } });
+    showToast(isAr ? 'تم تأكيد وتحرير عمولة الليد بنجاح' : 'Lead validé avec succès ! Commission débloquée.');
   };
 
-  // Trigger Toast Notification
-  const showToast = (msg: string) => {
-    setActionSuccessToast(msg);
-    setTimeout(() => setActionSuccessToast(null), 4000);
-  };
-
-  // Manual Status Change Handler
-  const handleUpdateOrderStatus = (orderId: string, newStatus: TrackingStatus) => {
-    setConversions(prev => prev.map(conv => {
-      if (conv.id === orderId) {
-        return {
-          ...conv,
-          status: newStatus,
-          deliveredAt: newStatus === 'DELIVERED' ? new Date().toISOString().replace('T', ' ').substring(0, 16) : conv.deliveredAt
+  const handleFlagLeadFake = (leadId: string, reason: string) => {
+    setLeads(prev => prev.map(l => {
+      if (l.id === leadId) {
+        return { 
+          ...l, 
+          status: 'FLAGGED_FAKE', 
+          fraudFlags: [...l.fraudFlags, reason] 
         };
       }
-      return conv;
+      return l;
     }));
-
-    const orderObj = conversions.find(c => c.id === orderId);
-    if (newStatus === 'DELIVERED') {
-      showToast(isAr 
-        ? `تم تحديث الطلب #${orderObj?.orderNumber} كـ مُسلَّم (DELIVERED). تم إيداع عمولة ${orderObj?.commissionMAD.toFixed(2)} د.م للمسوق ${orderObj?.affiliateName}.`
-        : `Commande #${orderObj?.orderNumber} marquée comme LIVRÉE. Commission de ${orderObj?.commissionMAD.toFixed(2)} MAD débloquée pour ${orderObj?.affiliateName}.`
-      );
-    } else if (newStatus === 'RETURNED') {
-      showToast(isAr 
-        ? `تم تسجيل الطلب #${orderObj?.orderNumber} كـ مرتجع COD RETURNED. تم إلغاء العمولة المعلقة.`
-        : `Commande #${orderObj?.orderNumber} marquée comme RETOUR COD. Commission annulée.`
-      );
-    } else if (newStatus === 'CANCELLED') {
-      showToast(isAr ? `تم إلغاء الطلب #${orderObj?.orderNumber}.` : `Commande #${orderObj?.orderNumber} annulée.`);
-    }
+    setActiveLeadForFlag(null);
+    showToast(isAr ? 'تم حظر وإلغاء الليد الاحتيالي بنجاح' : 'Fake lead signalé et rejeté du calcul des commissions.');
   };
 
-  // Handle Create Offer
-  const handleCreateOffer = (e: React.FormEvent) => {
+  const handleBulkApprove = () => {
+    if (selectedLeadIds.length === 0) return;
+    setLeads(prev => prev.map(l => {
+      if (selectedLeadIds.includes(l.id)) {
+        return { ...l, status: 'APPROVED' };
+      }
+      return l;
+    }));
+    setSelectedLeadIds([]);
+    confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
+    showToast(isAr ? `تم تأكيد ${selectedLeadIds.length} ليد بنجاح` : `${selectedLeadIds.length} leads validés en lot.`);
+  };
+
+  const handleBulkFlagFake = () => {
+    if (selectedLeadIds.length === 0) return;
+    setLeads(prev => prev.map(l => {
+      if (selectedLeadIds.includes(l.id)) {
+        return { ...l, status: 'FLAGGED_FAKE', fraudFlags: [...l.fraudFlags, 'Rejet groupé par le marchand'] };
+      }
+      return l;
+    }));
+    setSelectedLeadIds([]);
+    showToast(isAr ? `تم حظر ${selectedLeadIds.length} ليد مشبوه` : `${selectedLeadIds.length} fake leads rejetés.`);
+  };
+
+  // Invite Creator
+  const handleSendInvite = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!campaignTitle) return;
+    if (!invitingCreator) return;
+    confetti({ particleCount: 50, spread: 60 });
+    showToast(isAr 
+      ? `تم إرسال دعوة الشراكة إلى ${invitingCreator.fullName} بنجاح` 
+      : `Invitation de partenariat envoyée à ${invitingCreator.fullName} (${inviteCommissionMAD} MAD / Lead Thank You Page).`
+    );
+    setInvitingCreator(null);
+    setInviteMessage('');
+  };
 
-    // Update merchant profile
-    setMerchants(prev => prev.map(m => {
-      if (m.id === currentMerchant.id) {
-        return {
-          ...m,
-          commissionOffer: commissionType === 'PERCENTAGE' 
-            ? `${commissionVal}% ${isAr ? 'لكل طلب مسلم' : 'par commande livrée'}` 
-            : `${commissionVal} MAD ${isAr ? 'لكل تحويل' : 'par conversion'}`,
-          commissionType: commissionType,
-          commissionValue: commissionVal,
-          cookieDurationDays: cookieDays
+  // Create Campaign
+  const handleCreateCampaign = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCampaignModalOpen(false);
+    confetti({ particleCount: 60, spread: 70 });
+    showToast(isAr 
+      ? `تم إنشاء الحملة "${campaignTitle}" وتوليد الروابط بنجاح` 
+      : `Nouvelle campagne "${campaignTitle}" créée (${commissionVal} ${commissionType === 'PERCENTAGE' ? '%' : 'MAD'} par Thank You Page).`
+    );
+  };
+
+  // Upload Content Asset
+  const handleUploadAsset = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newAsset: ContentAsset = {
+      id: `asset-${Date.now()}`,
+      merchantId: currentMerchant.id,
+      title: newAssetTitle,
+      category: newAssetCategory,
+      fileFormat: 'ZIP / HD Files',
+      fileSize: '45 MB',
+      downloadUrl: '#',
+      description: newAssetDescription,
+      downloadsCount: 0,
+      createdAt: new Date().toISOString().substring(0, 10),
+    };
+    setAssets([newAsset, ...assets]);
+    setIsUploadAssetModalOpen(false);
+    setNewAssetTitle('');
+    setNewAssetDescription('');
+    showToast(isAr ? 'تم إضافة الملف إلى مكتبة المحتوى بنجاح' : 'Nouvel asset ajouté à la bibliothèque créative.');
+  };
+
+  // Top up escrow
+  const handleTopUpEscrow = (e: React.FormEvent) => {
+    e.preventDefault();
+    setEscrowWallet(prev => ({
+      ...prev,
+      availableEscrowMAD: prev.availableEscrowMAD + Number(topUpAmountMAD)
+    }));
+    setIsTopUpModalOpen(false);
+    confetti({ particleCount: 70, spread: 80 });
+    showToast(isAr ? `تم شحن رصيد الضمان بـ +${topUpAmountMAD} د.م بنجاح` : `Recharge de +${topUpAmountMAD} MAD créditée sur votre compte séquestre.`);
+  };
+
+  // Approve Payout
+  const handleApprovePayout = (payoutId: string) => {
+    setPayouts(prev => prev.map(p => {
+      if (p.id === payoutId) {
+        return { 
+          ...p, 
+          status: 'PROCESSED', 
+          transactionReference: `VIR-CIH-${Date.now().toString().slice(-8)}`,
+          paidAt: new Date().toISOString().substring(0, 16)
         };
       }
-      return m;
+      return p;
     }));
-
-    // Add Promo code if provided
-    if (promoCodeInput) {
-      const newPromo: PromoCode = {
-        id: `code-${Date.now()}`,
-        affiliateId: 'aff-001',
-        campaignId: currentMerchant.id,
-        merchantName: currentMerchant.companyName,
-        code: promoCodeInput.toUpperCase(),
-        discountPercentage: 10,
-        affiliateCommissionRate: commissionVal,
-        usesCount: 0,
-        totalVolumeMAD: 0,
-        status: 'ACTIVE',
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      setPromoCodes(prev => [newPromo, ...prev]);
-    }
-
-    setIsCampaignModalOpen(false);
-    showToast(isAr 
-      ? `تم حفظ ونشر العرض "${campaignTitle}" بنجاح للمسوقين المغاربة!` 
-      : `L'offre de campagne "${campaignTitle}" a été enregistrée et publiée avec succès !`
-    );
-    setCampaignTitle('');
-    setPromoCodeInput('');
+    showToast(isAr ? 'تم اعتماد التحويل البنكي للمسوق بنجاح' : 'Virement RIB validé et marqué comme exécuté.');
   };
 
-  // Run Webhook Simulation
-  const handleRunWebhookSimulation = () => {
-    setIsSimulating(true);
-    setTimeout(() => {
-      setIsSimulating(false);
-      const targetConv = conversions.find(c => c.orderNumber === simulatedOrderNum || c.merchantId === currentMerchant.id);
-      
-      if (targetConv) {
-        handleUpdateOrderStatus(targetConv.id, simulatedStatus as TrackingStatus);
-      }
+  // Filtered Leads
+  const filteredLeads = useMemo(() => {
+    return leads.filter(l => {
+      const matchSearch = 
+        l.leadReference.toLowerCase().includes(leadSearch.toLowerCase()) ||
+        l.promoterName.toLowerCase().includes(leadSearch.toLowerCase()) ||
+        l.customerCity.toLowerCase().includes(leadSearch.toLowerCase()) ||
+        l.trackingLinkCode.toLowerCase().includes(leadSearch.toLowerCase());
+      const matchStatus = leadStatusFilter === 'ALL' || l.status === leadStatusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [leads, leadSearch, leadStatusFilter]);
 
-      setSimulationResponse({
-        success: true,
-        event: 'order.delivery_status_updated',
-        processedAt: new Date().toISOString(),
-        orderNumber: simulatedOrderNum,
-        courier: simulatedCourier,
-        newStatus: simulatedStatus,
-        commissionSettledMAD: simulatedStatus === 'DELIVERED' ? (targetConv ? targetConv.commissionMAD : 67.50) : 0,
-        httpStatus: 200,
-        signatureVerified: true,
-        message: simulatedStatus === 'DELIVERED' 
-          ? `Webhook processed successfully: Order #${simulatedOrderNum} marked as DELIVERED via ${simulatedCourier}. Funds credited in MAD.`
-          : `Webhook processed successfully: Status ${simulatedStatus} recorded for #${simulatedOrderNum}.`
-      });
-    }, 800);
-  };
+  // Filtered Creators
+  const filteredCreators = useMemo(() => {
+    return creators.filter(c => {
+      const matchSearch = 
+        c.fullName.toLowerCase().includes(creatorSearch.toLowerCase()) ||
+        c.handle.toLowerCase().includes(creatorSearch.toLowerCase()) ||
+        c.bio.toLowerCase().includes(creatorSearch.toLowerCase());
+      const matchNiche = selectedNiche === 'ALL' || c.niche === selectedNiche;
+      const matchPlatform = selectedPlatform === 'ALL' || c.primaryPlatform === selectedPlatform;
+      return matchSearch && matchNiche && matchPlatform;
+    });
+  }, [creators, creatorSearch, selectedNiche, selectedPlatform]);
 
-  const getStatusBadge = (status: TrackingStatus) => {
-    switch (status) {
-      case 'DELIVERED':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            {isAr ? 'مُسلَّم (مدفوع)' : 'Livré (Payé)'}
-          </span>
-        );
-      case 'SHIPPED':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-            <Truck className="w-3.5 h-3.5" />
-            {isAr ? 'في طور التوصيل' : 'En transit'}
-          </span>
-        );
-      case 'PENDING':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-            <Clock className="w-3.5 h-3.5" />
-            {isAr ? 'قيد التحقق' : 'En attente COD'}
-          </span>
-        );
-      case 'CONFIRMED':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-            <Check className="w-3.5 h-3.5" />
-            {isAr ? 'مؤكد من الزبون' : 'Confirmé Client'}
-          </span>
-        );
-      case 'CANCELLED':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
-            <XCircle className="w-3.5 h-3.5" />
-            {isAr ? 'ملغى' : 'Annulé'}
-          </span>
-        );
-      case 'RETURNED':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
-            <RotateCcw className="w-3.5 h-3.5" />
-            {isAr ? 'مرتجع COD' : 'Retour COD'}
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
+  // Filtered Assets
+  const filteredAssets = useMemo(() => {
+    return assets.filter(a => {
+      return assetCategoryFilter === 'ALL' || a.category === assetCategoryFilter;
+    });
+  }, [assets, assetCategoryFilter]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 pb-20">
       
       {/* Toast Notification */}
       {actionSuccessToast && (
-        <div className="fixed top-20 right-6 z-50 max-w-md bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-200">
-          <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-            <CheckCircle className="w-5 h-5" />
-          </div>
-          <p className="text-xs font-medium">{actionSuccessToast}</p>
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-slate-900 text-white rounded-2xl shadow-xl border border-slate-700 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span className="text-xs sm:text-sm font-medium">{actionSuccessToast}</span>
         </div>
       )}
 
-      {/* Header with Store Selector */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
-        <div className="flex items-center gap-4">
-          <StoreLogo
-            logo={currentMerchant.logo}
-            name={currentMerchant.companyName}
-            category={currentMerchant.category}
-            size="xl"
-          />
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black text-slate-950 tracking-tight">
-                {currentMerchant.companyName}
-              </h1>
-              <span className="px-2 py-0.5 text-xs font-semibold bg-slate-100 text-slate-600 rounded-md">
-                {currentMerchant.city}, {isAr ? 'المغرب' : 'Maroc'}
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1 flex items-center gap-2">
-              <span>{isAr ? 'المنصة:' : 'Plateforme :'} <strong className="text-slate-800">{currentMerchant.platformType}</strong></span>
-              <span>•</span>
-              <a 
-                href={currentMerchant.website} 
-                target="_blank" 
-                rel="noreferrer"
-                className="text-blue-600 hover:underline flex items-center gap-1"
+      {/* Top Banner: Brand Store Selector & Pixel Status */}
+      <div className="bg-white border-b border-slate-200 shadow-2xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            
+            {/* Store Identity */}
+            <div className="flex items-center gap-3.5">
+              <div 
+                onClick={handleOpenEditStore}
+                className="relative group cursor-pointer shrink-0"
+                title="Modifier le logo de la boutique"
               >
-                {currentMerchant.website} <ExternalLink className="w-3 h-3" />
-              </a>
-            </p>
-          </div>
-        </div>
-
-        {/* Store Switcher Dropdown & Actions */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative">
-            <select
-              id="merchant-selector"
-              value={selectedMerchantId}
-              onChange={(e) => setSelectedMerchantId(e.target.value)}
-              className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-sm font-semibold rounded-xl px-4 py-2.5 pr-10 hover:bg-slate-100 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-600"
-            >
-              {merchants.map(m => (
-                <option key={m.id} value={m.id}>
-                  {m.companyName} ({m.platformType})
-                </option>
-              ))}
-            </select>
-            <ChevronDown className={`w-4 h-4 text-slate-500 absolute top-1/2 -translate-y-1/2 pointer-events-none ${isRTL ? 'left-3' : 'right-3'}`} />
-          </div>
-
-          <button
-            onClick={() => setIsCampaignModalOpen(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-xs shadow-blue-600/30 transition-all cursor-pointer active:scale-98"
-          >
-            <Plus className="w-4 h-4" />
-            <span>{isAr ? 'إنشاء عرض / كود جديد' : 'Nouvelle Offre / Promo'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Navigation Tabs (Including Prisma Schema) */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-200 text-sm font-semibold">
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'overview'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
-          }`}
-        >
-          <TrendingUp className="w-4 h-4" />
-          <span>{isAr ? 'نظرة عامة ومؤشرات' : 'Vue d’ensemble'}</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('orders')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'orders'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
-          }`}
-        >
-          <Truck className="w-4 h-4" />
-          <span>{isAr ? 'الطلبات وعمولات المبيعات' : 'Commandes & Ventes Affiliés'}</span>
-          {pendingVerificationCount > 0 && (
-            <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
-              activeTab === 'orders' ? 'bg-blue-800 text-white' : 'bg-amber-100 text-amber-800'
-            }`}>
-              {pendingVerificationCount}
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('campaigns')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'campaigns'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
-          }`}
-        >
-          <Tag className="w-4 h-4" />
-          <span>{isAr ? 'الحملات وأكواد الخصم' : 'Campagnes & Promoteurs'}</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('api-setup')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'api-setup'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
-          }`}
-        >
-          <Key className="w-4 h-4" />
-          <span>{isAr ? 'إعدادات API و Webhooks' : 'Configuration API & Webhooks'}</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('code-suite')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'code-suite'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
-          }`}
-        >
-          <FileCode2 className="w-4 h-4 text-purple-400" />
-          <span>{isAr ? 'أكواد الربط والتتبع' : 'Plugins & Snippets'}</span>
-        </button>
-
-        {/* PRISMA SCHEMA VIEWER TAB INSIDE SELLER ACCOUNT */}
-        <button
-          onClick={() => setActiveTab('prisma-schema')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'prisma-schema'
-              ? 'bg-slate-900 text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
-          }`}
-        >
-          <Database className="w-4 h-4 text-emerald-400" />
-          <span>{isAr ? 'مخطط قاعدة البيانات Prisma' : 'Schéma Base de Données Prisma'}</span>
-        </button>
-      </div>
-
-      {/* TAB 1: OVERVIEW & KEY METRICS */}
-      {activeTab === 'overview' && (
-        <div className="space-y-8 animate-in fade-in duration-200">
-          
-          {/* 4 Core Moroccan Brand KPIs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            
-            {/* Metric 1: Gross Sales */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs relative overflow-hidden">
-              <div className="flex items-center justify-between text-slate-500 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider">
-                  {isAr ? 'المبيعات عبر المسوقين' : 'Ventes Brutes Affiliés'}
-                </span>
-                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                  <DollarSign className="w-4 h-4" />
+                {currentMerchant.logoUrl ? (
+                  <img 
+                    src={currentMerchant.logoUrl} 
+                    alt={currentMerchant.storeName} 
+                    className="w-12 h-12 rounded-xl object-cover border-2 border-blue-500/40 shadow-xs group-hover:opacity-85 transition-opacity" 
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0 group-hover:bg-blue-100 transition-colors">
+                    <StoreLogo slug={currentMerchant.slug} storeName={currentMerchant.storeName} size="md" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="w-4 h-4 text-white" />
                 </div>
               </div>
-              <div className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-                {grossAffiliateSales.toLocaleString()} <span className="text-sm font-bold text-slate-500">{isAr ? 'د.م' : 'MAD'}</span>
-              </div>
-              <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-600 font-semibold">
-                <TrendingUp className="w-3.5 h-3.5" />
-                <span>+24.6% {isAr ? 'مقارنة بالشهر الماضي' : 'vs 30 derniers jours'}</span>
-              </div>
-            </div>
 
-            {/* Metric 2: Total Commissions */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs relative overflow-hidden">
-              <div className="flex items-center justify-between text-slate-500 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider">
-                  {isAr ? 'العمولات المستحقة' : 'Commissions Dues'}
-                </span>
-                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                  <CoinsIcon className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-                {totalCommissionsOwed.toLocaleString(undefined, { minimumFractionDigits: 2 })} <span className="text-sm font-bold text-slate-500">{isAr ? 'د.م' : 'MAD'}</span>
-              </div>
-              <div className="mt-3 text-xs text-slate-500">
-                {isAr ? 'نسبة العمولة:' : 'Taux moyen :'} <strong className="text-slate-800">{currentMerchant.commissionOffer}</strong>
-              </div>
-            </div>
-
-            {/* Metric 3: Active Promoters */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs relative overflow-hidden">
-              <div className="flex items-center justify-between text-slate-500 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider">
-                  {isAr ? 'المسوقون النشطون' : 'Promoteurs Actifs'}
-                </span>
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <Users className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-                {currentMerchant.activeAffiliatesCount} <span className="text-sm font-bold text-slate-500">{isAr ? 'صانع محتوى' : 'créateurs'}</span>
-              </div>
-              <div className="mt-3 text-xs text-slate-500 flex items-center gap-2">
-                <span className="text-emerald-600 font-semibold">{isAr ? '100% صناع محتوى مغاربة' : 'Créateurs certifiés Maroc'}</span>
-                <span>•</span>
-                <button onClick={() => setActiveTab('campaigns')} className="text-blue-600 hover:underline">{isAr ? 'إدارة' : 'Gérer'}</button>
-              </div>
-            </div>
-
-            {/* Metric 4: Pending Verification & Confirmation Rate */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs relative overflow-hidden">
-              <div className="flex items-center justify-between text-slate-500 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider">
-                  {isAr ? 'طلبات قيد المراجعة' : 'Ventes en Attente'}
-                </span>
-                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                  <Clock className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-                {pendingVerificationCount} <span className="text-sm font-bold text-slate-500">{isAr ? 'طلب' : 'commandes'}</span>
-              </div>
-              <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-                <span>{isAr ? 'نسبة التحويل والتأكيد:' : 'Taux de Validation :'}</span>
-                <strong className="text-emerald-600 font-bold">{deliveryRatePercent}%</strong>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Quick Action Bento Grid for Merchant */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Active Commission Model card */}
-            <div className="bg-gradient-to-br from-slate-900 to-blue-950 text-white rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-md">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-semibold mb-4">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>{isAr ? 'عرض العمولة الحالي' : 'Offre d’Affiliation Active'}</span>
-                </div>
-                <h3 className="text-xl font-bold mb-2">{currentMerchant.companyName}</h3>
-                <p className="text-xs text-slate-300 mb-6 leading-relaxed">
-                  {currentMerchant.description}
-                </p>
-                <div className="bg-white/10 rounded-2xl p-4 space-y-2.5 backdrop-blur-xs text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">{isAr ? 'نسبة العمولة:' : 'Taux de Commission :'}</span>
-                    <span className="font-bold text-white">{currentMerchant.commissionOffer}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">{isAr ? 'مدة صلاحية الكوكي:' : 'Durée d’Attribution Cookie :'}</span>
-                    <span className="font-bold text-white">{currentMerchant.cookieDurationDays} {isAr ? 'يوم' : 'Jours'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">{isAr ? 'آلية التأكيد:' : 'Attribution des Ventes :'}</span>
-                    <span className="font-bold text-emerald-400">{isAr ? 'تتبع فوري عبر بيكسل RoketLead' : 'Attribution Immédiate Pixel / API'}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                <button
-                  onClick={() => setIsCampaignModalOpen(true)}
-                  className="text-xs font-bold text-blue-300 hover:text-white flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  {isAr ? 'تعديل الشروط' : 'Modifier les Conditions'}
-                </button>
-                <button
-                  onClick={() => setActiveTab('api-setup')}
-                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors cursor-pointer"
-                >
-                  {isAr ? 'مفاتيح الربط' : 'Clés Webhook'}
-                </button>
-              </div>
-            </div>
-
-            {/* Recent Incoming Orders summary */}
-            <div className="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-950">
-                      {isAr ? 'آخر المبيعات عبر المسوقين' : 'Dernières Ventes Attribuées aux Promoteurs'}
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      {isAr ? 'تتبع مباشر لكل عملية بيع جديدة تأتي عبر روابط وكوبونات المسوقين' : 'Conversions en temps réel générées par vos affiliés et créateurs de contenu'}
-                    </p>
-                  </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-base sm:text-lg font-black text-slate-950 tracking-tight">
+                    {currentMerchant.storeName}
+                  </h1>
+                  <span className="px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold bg-blue-100 text-blue-800 rounded-full">
+                    {currentMerchant.category}
+                  </span>
                   <button
-                    onClick={() => setActiveTab('orders')}
-                    className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+                    onClick={handleOpenEditStore}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-slate-600 hover:text-blue-700 bg-slate-100 hover:bg-blue-50 rounded-lg border border-slate-200 hover:border-blue-200 transition-all cursor-pointer shadow-2xs"
                   >
-                    <span>{isAr ? 'عرض جميع الطلبات' : 'Voir tout'}</span>
-                    <ArrowRight className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180' : ''}`} />
+                    <Edit3 className="w-3 h-3" />
+                    <span>Modifier profil</span>
                   </button>
                 </div>
-
-                <div className="divide-y divide-slate-100">
-                  {merchantConversions.slice(0, 4).map((order) => (
-                    <div key={order.id} className="py-3 flex items-center justify-between gap-4 text-xs">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <strong className="text-slate-900 font-mono">#{order.orderNumber}</strong>
-                          <span className="text-slate-400">•</span>
-                          <span className="text-slate-600">{order.customerCity}</span>
-                          <span className="text-slate-400">•</span>
-                          <span className="text-blue-600 font-medium">via {order.affiliateName}</span>
-                        </div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">
-                          {order.courierName || 'RoketLead Tracker'} ({order.trackingNumber || 'RKT-SALE'})
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <div className="font-bold text-slate-900">
-                          {order.orderAmountMAD.toLocaleString()} <span className="text-slate-500 font-normal">{isAr ? 'د.م' : 'MAD'}</span>
-                        </div>
-                        <div className="mt-1">
-                          {getStatusBadge(order.status)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center gap-3 text-xs text-slate-500 font-medium mt-0.5 flex-wrap">
+                  <span>{currentMerchant.city}, Maroc</span>
+                  <span>•</span>
+                  <a href={currentMerchant.website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline flex items-center gap-1 font-semibold">
+                    {currentMerchant.website.replace('https://', '')}
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
                 </div>
               </div>
-
-              <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <span>{isAr ? 'تأكيد المبيعة يحرر العمولة مباشرة في رصيد المسوق' : 'La confirmation de vente crédite automatiquement la commission au créateur.'}</span>
-                <button
-                  onClick={() => setActiveTab('api-setup')}
-                  className="text-blue-600 font-semibold hover:underline"
-                >
-                  {isAr ? 'اختبار Webhook محاكي' : 'Tester le simulateur Webhook'}
-                </button>
-              </div>
             </div>
 
-          </div>
-
-        </div>
-      )}
-
-      {/* TAB 2: ORDER VERIFICATION & AFFILIATE SALES */}
-      {activeTab === 'orders' && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
-          
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-950">
-                {isAr ? 'إدارة مبيعات الإحالة والعمولات' : 'Suivi des Ventes & Commissions Affiliés'}
-              </h2>
-              <p className="text-xs text-slate-500">
-                {isAr 
-                  ? 'تتبع وتأكيد المبيعات المحققة عبر روابط وأكواد المسوقين مع التحقق من صحة المعاملات.'
-                  : 'Gérez et validez les ventes générées par les liens de vos promoteurs et influenceurs.'}
-              </p>
-            </div>
-
-            {/* Search & Filter */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="relative">
-                <Search className={`w-4 h-4 text-slate-400 absolute top-1/2 -translate-y-1/2 ${isRTL ? 'right-3' : 'left-3'}`} />
-                <input
-                  type="text"
-                  placeholder={isAr ? 'بحث بالطلب، المدينة، المسوق...' : 'Recherche par commande, ville...'}
-                  value={orderSearchQuery}
-                  onChange={(e) => setOrderSearchQuery(e.target.value)}
-                  className={`bg-slate-50 border border-slate-200 text-xs rounded-xl py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 w-52 sm:w-64 ${
-                    isRTL ? 'pr-9 pl-3' : 'pl-9 pr-3'
-                  }`}
-                />
+            {/* Live Pixel Status + Escrow Quick Balance */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              
+              {/* Thank You Page Pixel Indicator */}
+              <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-bold shadow-2xs">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <span>Pixel Actif</span>
               </div>
 
+              {/* Escrow Quick Pill */}
+              <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold shadow-2xs">
+                <Lock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span>Séquestre : <strong className="text-blue-600 text-sm font-black">{(escrowWallet?.availableEscrowMAD ?? 0).toLocaleString()} MAD</strong></span>
+              </div>
+
+              {/* Store Switcher Dropdown */}
               <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-xs font-semibold rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
+                value={selectedMerchantId}
+                onChange={(e) => setSelectedMerchantId(e.target.value)}
+                className="text-xs font-bold px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-blue-600 cursor-pointer shadow-2xs"
               >
-                <option value="ALL">{isAr ? 'جميع الحالات' : 'Tous les Statuts'}</option>
-                <option value="PENDING">{isAr ? 'قيد المراجعة' : 'En attente'}</option>
-                <option value="SHIPPED">{isAr ? 'مؤكدة وفي التنفيذ' : 'En cours'}</option>
-                <option value="DELIVERED">{isAr ? 'مبيعة مؤكدة (مدفوعة)' : 'Validée (Payée)'}</option>
-                <option value="RETURNED">{isAr ? 'مسترجعة' : 'Remboursée'}</option>
-                <option value="CANCELLED">{isAr ? 'ملغاة' : 'Annulée'}</option>
+                {merchants.map(m => (
+                  <option key={m.id} value={m.id}>
+                    {m.storeName} ({m.city})
+                  </option>
+                ))}
               </select>
+
             </div>
-          </div>
 
-          {/* Orders Table */}
-          <div className="overflow-x-auto border border-slate-100 rounded-2xl">
-            <table className="w-full text-left text-xs text-slate-600">
-              <thead className="bg-slate-50 text-slate-800 font-bold uppercase text-[11px] border-b border-slate-100">
-                <tr>
-                  <th className="p-4">{isAr ? 'رقم الطلب' : 'Réf Commande'}</th>
-                  <th className="p-4">{isAr ? 'المسوق / الكود' : 'Promoteur / Code'}</th>
-                  <th className="p-4">{isAr ? 'المدينة والزبون' : 'Ville & Client'}</th>
-                  <th className="p-4">{isAr ? 'قيمة المبيعة' : 'Montant Total'}</th>
-                  <th className="p-4">{isAr ? 'عمولة المسوق' : 'Commission'}</th>
-                  <th className="p-4">{isAr ? 'قناة الإحالة' : 'Canal d’Attribution'}</th>
-                  <th className="p-4">{isAr ? 'الحالة' : 'Statut'}</th>
-                  <th className="p-4 text-right">{isAr ? 'إجراءات التأكيد' : 'Action'}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredOrders.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="p-8 text-center text-slate-400">
-                      {isAr ? 'لا توجد طلبات مطابقة لمعايير البحث' : 'Aucune commande trouvée correspondant à vos critères.'}
-                    </td>
-                  </tr>
-                ) : (
-                  filteredOrders.map((order) => (
-                    <tr key={order.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="p-4 font-mono font-bold text-slate-900">
-                        #{order.orderNumber}
-                        <div className="text-[10px] text-slate-400 font-sans font-normal">{order.date}</div>
-                      </td>
-                      <td className="p-4">
-                        <div className="font-semibold text-slate-900">{order.affiliateName}</div>
-                        {order.promoCode && (
-                          <span className="inline-block px-1.5 py-0.5 bg-purple-50 text-purple-700 rounded text-[10px] font-mono mt-0.5">
-                            🏷️ {order.promoCode}
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <div className="font-medium text-slate-800">{order.customerCity}</div>
-                        <div className="text-[10px] text-slate-400">{isAr ? 'دفع عند الاستلام' : 'Cash On Delivery'}</div>
-                      </td>
-                      <td className="p-4 font-bold text-slate-900">
-                        {order.orderAmountMAD.toLocaleString()} {isAr ? 'د.م' : 'MAD'}
-                      </td>
-                      <td className="p-4 font-bold text-blue-600">
-                        {order.commissionMAD.toFixed(2)} {isAr ? 'د.م' : 'MAD'}
-                      </td>
-                      <td className="p-4">
-                        <div className="text-slate-800 font-medium">{order.courierName || 'Amana'}</div>
-                        <div className="text-[10px] font-mono text-slate-400">{order.trackingNumber || 'MA-AMN-99482'}</div>
-                      </td>
-                      <td className="p-4">
-                        {getStatusBadge(order.status)}
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {order.status !== 'DELIVERED' && (
-                            <button
-                              onClick={() => handleUpdateOrderStatus(order.id, 'DELIVERED')}
-                              className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-lg text-[11px] transition-colors cursor-pointer"
-                              title="Marquer comme livré et débloquer la commission"
-                            >
-                              {isAr ? 'تأكيد التسليم' : 'Valider Livré'}
-                            </button>
-                          )}
-                          {order.status !== 'RETURNED' && order.status !== 'DELIVERED' && (
-                            <button
-                              onClick={() => handleUpdateOrderStatus(order.id, 'RETURNED')}
-                              className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg text-[11px] transition-colors cursor-pointer"
-                              title="Signaler un retour COD"
-                            >
-                              {isAr ? 'مرتجع' : 'Retour'}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
           </div>
-
         </div>
-      )}
 
-      {/* TAB 3: CAMPAIGNS & PROMOTERS */}
-      {activeTab === 'campaigns' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs">
-            <div>
-              <h2 className="text-xl font-bold text-slate-950">
-                {isAr ? 'الحملات، العمولات وأكواد الخصم' : 'Campagnes d’Affiliation & Codes Promo'}
-              </h2>
-              <p className="text-xs text-slate-500">
-                {isAr 
-                  ? 'تخصيص نسب العمولة وأكواد الخصم الحصرية للمؤثرين وصناع المحتوى بالمغرب.'
-                  : 'Définissez vos offres de commission et attribuez des codes promo exclusifs aux influenceurs.'}
-              </p>
-            </div>
+        {/* 6 Core Module Navigation Tabs */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-100">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-2.5">
+            
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+                activeTab === 'overview'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4" />
+              <span>{language === 'ar' ? 'لوحة التحكم' : 'Dashboard Overview'}</span>
+            </button>
 
             <button
-              onClick={() => setIsCampaignModalOpen(true)}
-              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              onClick={() => setActiveTab('creators')}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+                activeTab === 'creators'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+              }`}
             >
-              <Plus className="w-4 h-4" />
-              <span>{isAr ? 'إضافة كود / عرض جديد' : 'Créer une Offre'}</span>
+              <Users className="w-4 h-4" />
+              <span>{language === 'ar' ? 'سوق صناع المحتوى' : 'Marketplace Créateurs'}</span>
+              <span className="px-1.5 py-0.2 text-[10px] bg-blue-100 text-blue-700 rounded-full font-bold">
+                {creators.length}
+              </span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('campaigns')}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+                activeTab === 'campaigns'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+              }`}
+            >
+              <Tag className="w-4 h-4" />
+              <span>{language === 'ar' ? 'الحملات والروابط' : 'Gestion Campagnes & Liens'}</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('lead-validation')}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+                activeTab === 'lead-validation'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+              }`}
+            >
+              <ShieldAlert className="w-4 h-4 text-amber-400" />
+              <span>{language === 'ar' ? 'التحقق ومكافحة الاحتيال' : 'Validation Leads (Anti-Fraude)'}</span>
+              <span className="px-1.5 py-0.2 text-[10px] bg-amber-100 text-amber-800 rounded-full font-bold">
+                {leads.filter(l => l.status === 'PENDING_HOLD').length} En attente
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('content-library')}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+                activeTab === 'content-library'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              <span>{language === 'ar' ? 'مكتبة المحتوى' : 'Bibliothèque de Contenu'}</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('payments')}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+                activeTab === 'payments'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+              }`}
+            >
+              <CreditCard className="w-4 h-4" />
+              <span>{language === 'ar' ? 'المدفوعات والحساب البنكي' : 'Paiements & RIB'}</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('pixel')}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+                activeTab === 'pixel'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+              }`}
+            >
+              <Code className="w-4 h-4 text-emerald-400" />
+              <span>Code Pixel JS</span>
+            </button>
+
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Promo Codes Box */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs">
-              <h3 className="font-bold text-slate-950 text-base mb-4 flex items-center gap-2">
-                <Tag className="w-4 h-4 text-blue-600" />
-                <span>{isAr ? 'أكواد الخصم النشطة للمسوقين' : 'Codes Promo Actifs par Promoteur'}</span>
-              </h3>
-
-              <div className="space-y-3">
-                {promoCodes.map((code) => (
-                  <div key={code.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md text-xs border border-blue-200/60">
-                          {code.code}
-                        </span>
-                        <span className="text-xs font-semibold text-slate-700">{code.merchantName}</span>
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-1">
-                        {isAr ? 'خصم للزبون:' : 'Réduction client :'} <strong>{code.discountPercentage}%</strong> • {isAr ? 'عمولة المسوق:' : 'Commission :'} <strong className="text-emerald-600">{code.affiliateCommissionRate}%</strong>
-                      </div>
-                    </div>
-
-                    <div className="text-right text-xs">
-                      <div className="font-bold text-slate-900">{code.usesCount} {isAr ? 'استخدام' : 'utilisations'}</div>
-                      <div className="text-[11px] text-slate-500">{code.totalVolumeMAD.toLocaleString()} {isAr ? 'د.م' : 'MAD'}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Commission Rules */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs space-y-4">
-              <h3 className="font-bold text-slate-950 text-base flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>{isAr ? 'قواعد الأمان والإسناد الدقيق' : 'Règles d’Attribution & Anti-Fraude'}</span>
-              </h3>
-
-              <div className="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-100 text-xs space-y-2 text-emerald-950">
-                <div className="font-bold flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>{isAr ? 'تتبع فوري ومحكم عبر بيكسل RoketLead' : 'Attribution Précise par Pixel & Liens'}</span>
-                </div>
-                <p className="text-emerald-800 leading-relaxed">
-                  {isAr 
-                    ? 'يتم تتبع النقرات والمبيعات تلقائياً بنظام إسناد فوري على صفحة تأكيد الطلب، مع حماية تامة ضد التكرار أو التلاعب بالروابط.'
-                    : 'Chaque vente est attribuée en temps réel via le pixel JavaScript sur la page de confirmation de commande, avec détection anti-fraude.'}
-                </p>
-              </div>
-
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs space-y-2 text-slate-700">
-                <div className="font-bold text-slate-900">{isAr ? 'نافذة التتبع للكوكي (Cookie Window):' : 'Attribution Cookie :'}</div>
-                <p className="text-slate-600">
-                  {isAr 
-                    ? `محددة حالياً في ${currentMerchant.cookieDurationDays} يوماً. أي عملية شراء تتم خلال هذه المدة تُحسب تلقائياً للمسوق صاحب الرابط.`
-                    : `Actuellement configurée sur ${currentMerchant.cookieDurationDays} jours. Tout achat effectué durant cette période est crédité au promoteur.`}
-                </p>
-              </div>
-            </div>
-
-          </div>
-
         </div>
-      )}
+      </div>
 
-      {/* TAB 4: API & WEBHOOK SETUP */}
-      {activeTab === 'api-setup' && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-8 animate-in fade-in duration-200">
-          
-          <div>
-            <h2 className="text-xl font-bold text-slate-950">
-              {isAr ? 'إعدادات المفاتيح و Webhooks للمتجر' : 'Clés d’Intégration & Configuration Webhook'}
-            </h2>
-            <p className="text-xs text-slate-500">
-              {isAr 
-                ? 'استخدم هذه المفاتيح لربط متجرك (YouCan, Shopify, WooCommerce) أو لاستقبال تحديثات التوصيل.'
-                : 'Utilisez ces identifiants sécurisés pour connecter votre boutique et recevoir les mises à jour de livraison.'}
-            </p>
-          </div>
+      {/* Main Module Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20">
 
-          {/* Key Credentials Box */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200">
-              <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                {isAr ? 'معرف المتجر (Merchant ID)' : 'Merchant ID (Public)'}
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={currentMerchant.id}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 font-mono text-xs text-slate-900"
-                />
-                <button
-                  onClick={() => handleCopy(currentMerchant.id, 'merchantId')}
-                  className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 cursor-pointer"
-                  title="Copier"
-                >
-                  {copiedKey === 'merchantId' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200">
-              <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                {isAr ? 'المفتاح السري للتوقيع (Secret Key)' : 'Secret Key (HMAC Webhooks)'}
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type={showSecretKey ? 'text' : 'password'}
-                  readOnly
-                  value={currentMerchant.integrationSecretKey}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 font-mono text-xs text-slate-900"
-                />
-                <button
-                  onClick={() => setShowSecretKey(!showSecretKey)}
-                  className="px-3 py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer"
-                >
-                  {showSecretKey ? (isAr ? 'إخفاء' : 'Masquer') : (isAr ? 'إظهار' : 'Afficher')}
-                </button>
-                <button
-                  onClick={() => handleCopy(currentMerchant.integrationSecretKey, 'secretKey')}
-                  className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 cursor-pointer"
-                  title="Copier"
-                >
-                  {copiedKey === 'secretKey' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Webhook Interactive Simulator */}
-          <div className="border-t border-slate-100 pt-6">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
-                <Play className="w-4 h-4" />
-              </div>
-              <h3 className="text-base font-bold text-slate-950">
-                {isAr ? 'محاكي استقبال إشعارات التوصيل (Webhook Simulator)' : 'Simulateur d’Événements Webhook Livraisons COD'}
-              </h3>
-            </div>
-            <p className="text-xs text-slate-500 mb-6">
-              {isAr 
-                ? 'اختبر كيف يستجيب نظام RoketLead عندما تعلن أمانة أو كاثيديس عن تسليم الطرد وقبض المبلغ.'
-                : 'Testez la réaction du système lors de la confirmation de livraison par votre transporteur.'}
-            </p>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              <div className="lg:col-span-6 space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">{isAr ? 'رقم الطلب' : 'Réf Commande'}</label>
-                    <input
-                      type="text"
-                      value={simulatedOrderNum}
-                      onChange={(e) => setSimulatedOrderNum(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">{isAr ? 'شركة الشحن' : 'Transporteur'}</label>
-                    <select
-                      value={simulatedCourier}
-                      onChange={(e) => setSimulatedCourier(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900"
-                    >
-                      <option value="Amana Express">Amana Express</option>
-                      <option value="Cathedis">Cathedis</option>
-                      <option value="Sendit">Sendit</option>
-                    </select>
+        {/* ========================================================================= */}
+        {/* MODULE 1: DASHBOARD OVERVIEW */}
+        {/* ========================================================================= */}
+        {activeTab === 'overview' && (
+          <div className="space-y-8 animate-in fade-in duration-200">
+            
+            {/* Top 4 KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              
+              {/* Total Clics */}
+              <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:border-blue-200 transition-colors">
+                <div className="flex items-center justify-between text-slate-500 mb-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Total Clics Générés</span>
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <TrendingUp className="w-4.5 h-4.5" />
                   </div>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">{isAr ? 'حالة التسليم الجديدة' : 'Nouveau Statut'}</label>
-                  <select
-                    value={simulatedStatus}
-                    onChange={(e) => setSimulatedStatus(e.target.value as any)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900"
-                  >
-                    <option value="DELIVERED">{isAr ? 'DELIVERED (تم التسليم وقبض المبلغ)' : 'DELIVERED (Livré & Encaissé)'}</option>
-                    <option value="RETURNED">{isAr ? 'RETURNED (مرتجع COD)' : 'RETURNED (Refusé / Retour)'}</option>
-                    <option value="CANCELLED">{isAr ? 'CANCELLED (ملغى من الزبون)' : 'CANCELLED (Annulé)'}</option>
-                  </select>
+                <div className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                  16,520
                 </div>
-
-                <button
-                  onClick={handleRunWebhookSimulation}
-                  disabled={isSimulating}
-                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {isSimulating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-                  <span>{isSimulating ? (isAr ? 'جاري الإرسال...' : 'Envoi en cours...') : (isAr ? 'إرسال Webhook اختباري' : 'Déclencher l’Événement Webhook')}</span>
-                </button>
+                <div className="flex items-center gap-1.5 mt-3 text-xs font-semibold text-emerald-600">
+                  <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
+                  <span>+18.4% cette semaine</span>
+                </div>
               </div>
 
-              {/* Simulation Result Output */}
-              <div className="lg:col-span-6 bg-[#0f172a] text-slate-200 p-5 rounded-2xl border border-slate-800 text-xs font-mono min-h-[220px]" dir="ltr">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 text-[11px] text-slate-400">
-                  <span>POST /api/v1/webhooks/order-status</span>
-                  <span className={simulationResponse ? "text-emerald-400 font-bold" : "text-slate-500"}>
-                    {simulationResponse ? `HTTP ${simulationResponse.httpStatus} OK` : 'Awaiting simulation'}
+              {/* Leads Trackés (Thank You Page) */}
+              <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:border-emerald-200 transition-colors">
+                <div className="flex items-center justify-between text-slate-500 mb-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Leads Trackés (Thank You)</span>
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <CheckCircle className="w-4.5 h-4.5" />
+                  </div>
+                </div>
+                <div className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                  571
+                </div>
+                <div className="flex items-center gap-1.5 mt-3 text-xs text-emerald-700 font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span>Attribution 100% automatisée pixel</span>
+                </div>
+              </div>
+
+              {/* Taux de Conversion */}
+              <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:border-purple-200 transition-colors">
+                <div className="flex items-center justify-between text-slate-500 mb-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Taux de Conversion</span>
+                  <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                    <Percent className="w-4.5 h-4.5" />
+                  </div>
+                </div>
+                <div className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                  3.46%
+                </div>
+                <div className="flex items-center gap-1.5 mt-3 text-xs text-purple-700 font-semibold">
+                  <span>Moyenne créateurs : 4.2%</span>
+                </div>
+              </div>
+
+              {/* Commissions Dues & Payées */}
+              <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:border-amber-200 transition-colors">
+                <div className="flex items-center justify-between text-slate-500 mb-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Commissions Dues (MAD)</span>
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <DollarSign className="w-4.5 h-4.5" />
+                  </div>
+                </div>
+                <div className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                  19,985 <span className="text-sm font-bold text-slate-500">MAD</span>
+                </div>
+                <div className="flex items-center gap-1.5 mt-3 text-xs text-slate-500 font-medium">
+                  <span>148,500 MAD déjà payés aux affiliés</span>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Performance Chart & Live Pixel Stream Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* Performance Chart (2 cols) */}
+              <div className="lg:col-span-2 p-6 bg-white rounded-2xl border border-slate-200/90 shadow-2xs">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-base font-bold text-slate-950">
+                      Évolution des Clics & Leads Trackés (Page de Remerciement)
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      Suivi quotidien des conversions générées par vos affiliés
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-xl bg-slate-100 text-xs font-bold text-slate-700">
+                    7 derniers jours
                   </span>
                 </div>
 
-                {simulationResponse ? (
-                  <pre className="text-slate-300 text-[11px] overflow-x-auto leading-relaxed">
-                    {JSON.stringify(simulationResponse, null, 2)}
-                  </pre>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-36 text-slate-500 text-center font-sans">
-                    <Zap className="w-6 h-6 text-slate-600 mb-2" />
-                    <span>Cliquez sur "Déclencher l'événement" pour observer la réconciliation instantanée.</span>
+                <div className="h-[280px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={PERFORMANCE_DATA_7D}>
+                      <defs>
+                        <linearGradient id="colorClicks" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#1D61FF" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="#1D61FF" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis dataKey="day" stroke="#64748B" fontSize={12} tickLine={false} />
+                      <YAxis stroke="#64748B" fontSize={12} tickLine={false} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#0F172A', 
+                          color: '#fff', 
+                          borderRadius: '12px', 
+                          border: 'none',
+                          fontSize: '12px' 
+                        }} 
+                      />
+                      <Area type="monotone" dataKey="clicks" name="Clics" stroke="#1D61FF" strokeWidth={2.5} fillOpacity={1} fill="url(#colorClicks)" />
+                      <Area type="monotone" dataKey="leads" name="Leads (Thank You)" stroke="#10B981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorLeads)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-slate-100 text-xs font-semibold">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-blue-600" />
+                    <span className="text-slate-600">Clics Affiliés</span>
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-        </div>
-      )}
-
-      {/* TAB 5: CODE SUITE & PLUGINS */}
-      {activeTab === 'code-suite' && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
-          
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-950">
-                {isAr ? 'أكواد الربط البرمجي وإضافات المتاجر' : 'Code d’Intégration & Plugins Techniques'}
-              </h2>
-              <p className="text-xs text-slate-500">
-                {isAr 
-                  ? 'إضافة تتبع الكوكيز، كود WooCommerce، وكود استقبال Webhooks لتسوية الشحنات.'
-                  : 'Snippets JavaScript, plugin WordPress WooCommerce et script backend de réconciliation.'}
-              </p>
-            </div>
-
-            {/* Sub-selector */}
-            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
-              <button
-                onClick={() => setCodeTab('tracker')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                  codeTab === 'tracker' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Tracker JS
-              </button>
-              <button
-                onClick={() => setCodeTab('woocommerce')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                  codeTab === 'woocommerce' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                WooCommerce PHP
-              </button>
-              <button
-                onClick={() => setCodeTab('webhook')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                  codeTab === 'webhook' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Webhook Handler (TS)
-              </button>
-            </div>
-          </div>
-
-          {/* Snippet Code Viewer */}
-          <div className="bg-[#0f172a] rounded-2xl p-5 border border-slate-800 text-slate-200" dir="ltr">
-            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800 text-xs">
-              <div className="flex items-center gap-2 text-slate-400 font-mono">
-                <FileCode2 className="w-4 h-4 text-blue-400" />
-                <span>
-                  {codeTab === 'tracker' && 'roketlead-tracker.js (Client-side Attribution)'}
-                  {codeTab === 'woocommerce' && 'roketlead-woocommerce.php (WordPress Plugin)'}
-                  {codeTab === 'webhook' && 'webhook-reconciliation.ts (Express/Node.js)'}
-                </span>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-emerald-500" />
+                    <span className="text-slate-600">Leads Confirmés (Thank You Page)</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    const content = codeTab === 'tracker' ? TRACKER_JS_CODE : codeTab === 'woocommerce' ? WOOCOMMERCE_PLUGIN_CODE : WEBHOOK_HANDLER_TS_CODE;
-                    const name = codeTab === 'tracker' ? 'roketlead-tracker.js' : codeTab === 'woocommerce' ? 'roketlead-woocommerce.php' : 'webhook-reconciliation.ts';
-                    handleCopy(content, 'code');
-                  }}
-                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer"
+              {/* Anti-Fraud Hold Status & Quick Actions (1 col) */}
+              <div className="space-y-6">
+                
+                {/* Hold Summary Card */}
+                <div className="p-5 bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-2xl shadow-md border border-slate-800">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>Bouclier Anti-Fraude (Hold 48h)</span>
+                    </div>
+                    <span className="px-2 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded-md font-mono">
+                      Actif
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 mb-4 leading-relaxed">
+                    Les commissions restent en rétention 48h pour vous permettre de vérifier les faux numéros et commandes tests avant déblocage.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 p-3 bg-white/5 rounded-xl border border-white/10 text-center">
+                    <div>
+                      <div className="text-xl font-bold text-amber-400">
+                        {leads.filter(l => l.status === 'PENDING_HOLD').length}
+                      </div>
+                      <div className="text-[10px] text-slate-400 uppercase font-semibold">En Rétention</div>
+                    </div>
+                    <div>
+                      <div className="text-xl font-bold text-emerald-400">
+                        {leads.filter(l => l.status === 'APPROVED').length}
+                      </div>
+                      <div className="text-[10px] text-slate-400 uppercase font-semibold">Validés</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('lead-validation')}
+                    className="w-full mt-4 py-2 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <span>Inspecter les leads en attente</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Quick Actions Card */}
+                <div className="p-5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                    Actions Rapides Marchand
+                  </h3>
+                  <button
+                    onClick={() => setIsCampaignModalOpen(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50/70 border border-slate-200 text-xs font-bold text-slate-800 hover:text-blue-600 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Plus className="w-4 h-4 text-blue-600" />
+                      <span>Créer une nouvelle campagne</span>
+                    </div>
+                    <ChevronDown className={`w-3.5 h-3.5 -rotate-90 text-slate-400 ${isRTL ? 'rotate-90' : ''}`} />
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('creators')}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50/70 border border-slate-200 text-xs font-bold text-slate-800 hover:text-blue-600 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Users className="w-4 h-4 text-indigo-600" />
+                      <span>Découvrir et inviter des créateurs</span>
+                    </div>
+                    <ChevronDown className={`w-3.5 h-3.5 -rotate-90 text-slate-400 ${isRTL ? 'rotate-90' : ''}`} />
+                  </button>
+
+                  <button
+                    onClick={() => setIsUploadAssetModalOpen(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50/70 border border-slate-200 text-xs font-bold text-slate-800 hover:text-blue-600 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <UploadCloud className="w-4 h-4 text-emerald-600" />
+                      <span>Ajouter un asset dans la bibliothèque</span>
+                    </div>
+                    <ChevronDown className={`w-3.5 h-3.5 -rotate-90 text-slate-400 ${isRTL ? 'rotate-90' : ''}`} />
+                  </button>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* MODULE 2: MARKETPLACE CRÉATEURS (DISCOVERY) */}
+        {/* ========================================================================= */}
+        {activeTab === 'creators' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            
+            {/* Header & Filters */}
+            <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-black text-slate-950 tracking-tight">
+                    Marketplace des Créateurs & Influenceurs Marocains
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Découvrez des créateurs de contenu vérifiés avec score anti-fraude et invitez-les à promouvoir vos produits.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800">
+                    {filteredCreators.length} Créateurs disponibles
+                  </span>
+                </div>
+              </div>
+
+              {/* Search & Select Bars */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={creatorSearch}
+                    onChange={(e) => setCreatorSearch(e.target.value)}
+                    placeholder="Rechercher par nom, @handle ou mot-clé..."
+                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+
+                {/* Niche Filter */}
+                <select
+                  value={selectedNiche}
+                  onChange={(e) => setSelectedNiche(e.target.value)}
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-600 cursor-pointer"
                 >
-                  {copiedKey === 'code' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedKey === 'code' ? 'Copié !' : 'Copier'}</span>
-                </button>
-                <button
-                  onClick={() => {
-                    const content = codeTab === 'tracker' ? TRACKER_JS_CODE : codeTab === 'woocommerce' ? WOOCOMMERCE_PLUGIN_CODE : WEBHOOK_HANDLER_TS_CODE;
-                    const name = codeTab === 'tracker' ? 'roketlead-tracker.js' : codeTab === 'woocommerce' ? 'roketlead-woocommerce.php' : 'webhook-reconciliation.ts';
-                    handleDownloadFile(content, name);
-                  }}
-                  className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer"
+                  <option value="ALL">Toutes les thématiques</option>
+                  <option value="Beauty & Skincare">Cosmétique & Skincare</option>
+                  <option value="Tech & Electronics">Tech & Électronique</option>
+                  <option value="Fashion & Caftan">Mode & Caftan Artisanal</option>
+                  <option value="Home & Artisanal">Maison & Décoration</option>
+                  <option value="Fitness & Nutrition">Santé & Nutrition</option>
+                </select>
+
+                {/* Platform Filter */}
+                <select
+                  value={selectedPlatform}
+                  onChange={(e) => setSelectedPlatform(e.target.value)}
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-600 cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Télécharger</span>
-                </button>
+                  <option value="ALL">Toutes les plateformes</option>
+                  <option value="Instagram">Instagram</option>
+                  <option value="TikTok">TikTok</option>
+                  <option value="YouTube">YouTube</option>
+                  <option value="WhatsApp">WhatsApp Groups</option>
+                </select>
               </div>
             </div>
 
-            <pre className="font-mono text-xs leading-relaxed overflow-x-auto text-slate-300 max-h-96 select-all">
-              <code>
-                {codeTab === 'tracker' && TRACKER_JS_CODE}
-                {codeTab === 'woocommerce' && WOOCOMMERCE_PLUGIN_CODE}
-                {codeTab === 'webhook' && WEBHOOK_HANDLER_TS_CODE}
-              </code>
-            </pre>
+            {/* Creators Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCreators.map(creator => (
+                <div key={creator.id} className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
+                  
+                  <div className="p-5 space-y-4">
+                    {/* Header: Avatar, Name & Handle */}
+                    <div className="flex items-start gap-3">
+                      <img 
+                        src={creator.avatarUrl} 
+                        alt={creator.fullName} 
+                        className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-xs shrink-0" 
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="text-sm font-bold text-slate-950 truncate">{creator.fullName}</h3>
+                          {creator.isVerified && (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          )}
+                        </div>
+                        <div className="text-xs text-blue-600 font-semibold">{creator.handle}</div>
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold">
+                          {creator.niche}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Bio */}
+                    <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                      {creator.bio}
+                    </p>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                      <div>
+                        <div className="text-xs font-bold text-slate-900">{creator.audienceSize.split(' ')[0]}</div>
+                        <div className="text-[10px] text-slate-500">{creator.primaryPlatform}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-emerald-600">{creator.fraudQualityScore}/100</div>
+                        <div className="text-[10px] text-slate-500">Score Qualité</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-blue-600">{creator.avgConversionRate}%</div>
+                        <div className="text-[10px] text-slate-500">Conv. Lead</div>
+                      </div>
+                    </div>
+
+                    {/* Top Cities */}
+                    <div className="flex items-center gap-1 text-[11px] text-slate-500">
+                      <span className="font-semibold text-slate-700">Villes :</span>
+                      <span>{creator.topCities.join(', ')}</span>
+                    </div>
+
+                  </div>
+
+                  {/* Footer Card Action */}
+                  <div className="p-4 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between">
+                    <div>
+                      <div className="text-[10px] text-slate-400 font-semibold uppercase">Commission suggérée</div>
+                      <div className="text-xs font-black text-slate-900">
+                        {creator.suggestedPayoutMAD} MAD <span className="text-[10px] font-normal text-slate-500">/ Lead Thank You</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setInvitingCreator(creator);
+                        setInviteCommissionMAD(creator.suggestedPayoutMAD);
+                        setInviteMessage(`Bonjour ${creator.fullName}, nous souhaitons vous proposer de tester et promouvoir notre gamme ${currentMerchant.storeName} avec une commission de ${creator.suggestedPayoutMAD} MAD par prospect confirmé sur notre page de remerciement.`);
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                    >
+                      <Send className="w-3 h-3" />
+                      <span>Inviter</span>
+                    </button>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+
           </div>
+        )}
 
-        </div>
-      )}
-
-      {/* TAB 6: PRISMA SCHEMA & DATA MODEL (SELLER ACCOUNT EXCLUSIVE) */}
-      {activeTab === 'prisma-schema' && (
-        <div className="animate-in fade-in duration-200">
-          <PrismaSchemaViewer isEmbedded={true} />
-        </div>
-      )}
-
-      {/* CREATE OFFER / PROMO MODAL */}
-      {isCampaignModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-100 relative">
-            <button
-              onClick={() => setIsCampaignModalOpen(false)}
-              className={`absolute top-5 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold ${
-                isRTL ? 'left-5' : 'right-5'
-              }`}
-            >
-              ✕
-            </button>
-
-            <h3 className="text-xl font-bold text-slate-950 mb-1">
-              {isAr ? 'إنشاء وتحديث عرض العمولة' : 'Créer ou Mettre à Jour une Offre'}
-            </h3>
-            <p className="text-xs text-slate-500 mb-6">
-              {isAr ? `تحديد نسبة العمولة لمتجر ${currentMerchant.companyName}` : `Configurez la commission pour ${currentMerchant.companyName}`}
-            </p>
-
-            <form onSubmit={handleCreateOffer} className="space-y-4 text-xs">
+        {/* ========================================================================= */}
+        {/* MODULE 3: GESTION DES CAMPAGNES & LIENS */}
+        {/* ========================================================================= */}
+        {activeTab === 'campaigns' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            
+            {/* Top Bar with New Campaign CTA */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-white rounded-2xl border border-slate-200/90 shadow-2xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  {isAr ? 'عنوان العرض / الحملة *' : 'Titre de l’Offre / Campagne *'}
-                </label>
+                <h2 className="text-lg font-black text-slate-950 tracking-tight">
+                  Gestion des Campagnes & Rémunérations par Lead
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Définissez votre commission (MAD fixe ou %) par prospect atteignant la Thank You Page et générez des liens d’affiliation personnalisés.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsCampaignModalOpen(true)}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer shadow-xs"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Créer une Campagne</span>
+              </button>
+            </div>
+
+            {/* Campaign Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Campaign Card 1 */}
+              <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-100 text-emerald-800">
+                      Active
+                    </span>
+                    <h3 className="text-base font-bold text-slate-950 mt-1.5">
+                      Offre Vedette — Sérum d’Argan Pur Bio (Souss-Massa)
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Lien court : <strong className="text-blue-600 font-mono">rkt.ma/c/atlas-argan</strong>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-black text-slate-950">35 MAD</div>
+                    <div className="text-[10px] text-slate-500 font-semibold uppercase">Par Lead Confirmé</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">42</div>
+                    <div className="text-[10px] text-slate-500">Affiliés Actifs</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-blue-600">8,420</div>
+                    <div className="text-[10px] text-slate-500">Clics</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-emerald-600">294</div>
+                    <div className="text-[10px] text-slate-500">Leads (Thank You)</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
+                  <span className="text-slate-500">Fenêtre Anti-Fraude : <strong>48 heures</strong></span>
+                  <button 
+                    onClick={() => handleCopy('https://roketlead.com/r/atlas-argan', 'c1')}
+                    className="text-blue-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    {copiedKey === 'c1' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedKey === 'c1' ? 'Copié !' : 'Copier lien racine'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Campaign Card 2 */}
+              <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-100 text-emerald-800">
+                      Active
+                    </span>
+                    <h3 className="text-base font-bold text-slate-950 mt-1.5">
+                      Coffret Anti-Âge Figue de Barbarie & Argan
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Lien court : <strong className="text-blue-600 font-mono">rkt.ma/c/atlas-coffret</strong>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-black text-slate-950">50 MAD</div>
+                    <div className="text-[10px] text-slate-500 font-semibold uppercase">Par Lead Confirmé</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">28</div>
+                    <div className="text-[10px] text-slate-500">Affiliés Actifs</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-blue-600">5,190</div>
+                    <div className="text-[10px] text-slate-500">Clics</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-emerald-600">172</div>
+                    <div className="text-[10px] text-slate-500">Leads (Thank You)</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
+                  <span className="text-slate-500">Fenêtre Anti-Fraude : <strong>48 heures</strong></span>
+                  <button 
+                    onClick={() => handleCopy('https://roketlead.com/r/atlas-coffret', 'c2')}
+                    className="text-blue-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    {copiedKey === 'c2' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedKey === 'c2' ? 'Copié !' : 'Copier lien racine'}</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Quick Generator for Specific Creator Links */}
+            <div className="p-6 bg-slate-900 text-white rounded-2xl shadow-md border border-slate-800 space-y-4">
+              <div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-wider">
+                <Zap className="w-4 h-4" />
+                <span>Générateur Instantané de Liens de Tracking Promoteur</span>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">Promoteur Assigné</label>
+                  <input
+                    type="text"
+                    value={assignedPromoterName}
+                    onChange={(e) => {
+                      setAssignedPromoterName(e.target.value);
+                      const slug = e.target.value.toLowerCase().replace(/\s+/g, '-');
+                      setLinkSlug(slug);
+                      setGeneratedShortLink(`rkt.ma/c/${slug}`);
+                    }}
+                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-xs font-medium text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">Canal de Diffusion</label>
+                  <select
+                    value={linkChannel}
+                    onChange={(e: any) => setLinkChannel(e.target.value)}
+                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-xs font-bold text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  >
+                    <option value="Instagram" className="text-slate-900">Instagram Bio / Story</option>
+                    <option value="TikTok" className="text-slate-900">TikTok Bio Link</option>
+                    <option value="WhatsApp" className="text-slate-900">Groupe WhatsApp VIP</option>
+                    <option value="YouTube" className="text-slate-900">Description YouTube</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">Lien Court Généré</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={generatedShortLink}
+                      className="w-full px-3 py-2 bg-blue-950/60 border border-blue-500/40 rounded-xl text-xs font-mono font-bold text-blue-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(`https://roketlead.com/r/${linkSlug}?utm_source=${linkChannel.toLowerCase()}`, 'genlink')}
+                      className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shrink-0 cursor-pointer"
+                    >
+                      {copiedKey === 'genlink' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* MODULE 4: VALIDATION DES LEADS (ANTI-FRAUD HUB) */}
+        {/* ========================================================================= */}
+        {activeTab === 'lead-validation' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            
+            {/* Header Hub */}
+            <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-black text-slate-950 tracking-tight">
+                      Hub de Validation des Leads & Détection Anti-Fraude
+                    </h2>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900">
+                      Rétention 48h active
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Visualisez chaque lead issu de la Thank You Page avec métadonnées client masquées, score de risque IP et compte à rebours d’approbation.
+                  </p>
+                </div>
+
+                {/* Bulk Actions */}
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={selectedLeadIds.length === 0}
+                    onClick={handleBulkApprove}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <CheckCheck className="w-3.5 h-3.5" />
+                    <span>Valider la sélection ({selectedLeadIds.length})</span>
+                  </button>
+
+                  <button
+                    disabled={selectedLeadIds.length === 0}
+                    onClick={handleBulkFlagFake}
+                    className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <XCircle className="w-3.5 h-3.5" />
+                    <span>Signaler Fake ({selectedLeadIds.length})</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <div className="relative flex-1 w-full">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={leadSearch}
+                    onChange={(e) => setLeadSearch(e.target.value)}
+                    placeholder="Rechercher par référence, affilié, ville..."
+                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                  {['ALL', 'PENDING_HOLD', 'APPROVED', 'FLAGGED_FAKE'].map(st => (
+                    <button
+                      key={st}
+                      onClick={() => setLeadStatusFilter(st)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                        leadStatusFilter === st
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {st === 'ALL' && 'Tous'}
+                      {st === 'PENDING_HOLD' && 'En Attente (Hold)'}
+                      {st === 'APPROVED' && 'Validés'}
+                      {st === 'FLAGGED_FAKE' && 'Fake Rejetés'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Leads Table */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+                    <tr>
+                      <th className="p-4 w-10">
+                        <input
+                          type="checkbox"
+                          checked={selectedLeadIds.length === filteredLeads.length && filteredLeads.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedLeadIds(filteredLeads.map(l => l.id));
+                            } else {
+                              setSelectedLeadIds([]);
+                            }
+                          }}
+                          className="rounded border-slate-300 text-blue-600 cursor-pointer"
+                        />
+                      </th>
+                      <th className="p-4">Réf Lead & Timestamp</th>
+                      <th className="p-4">Client (Masqué) & Ville</th>
+                      <th className="p-4">Affilié & Canal</th>
+                      <th className="p-4">Commission</th>
+                      <th className="p-4">Score Risque IP</th>
+                      <th className="p-4">Statut / Hold</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredLeads.map(lead => {
+                      const isSelected = selectedLeadIds.includes(lead.id);
+                      return (
+                        <tr key={lead.id} className={`hover:bg-slate-50/80 transition-colors ${isSelected ? 'bg-blue-50/40' : ''}`}>
+                          
+                          {/* Checkbox */}
+                          <td className="p-4">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                if (isSelected) {
+                                  setSelectedLeadIds(selectedLeadIds.filter(id => id !== lead.id));
+                                } else {
+                                  setSelectedLeadIds([...selectedLeadIds, lead.id]);
+                                }
+                              }}
+                              className="rounded border-slate-300 text-blue-600 cursor-pointer"
+                            />
+                          </td>
+
+                          {/* Ref & Date */}
+                          <td className="p-4">
+                            <div className="font-bold text-slate-900 font-mono">{lead.leadReference}</div>
+                            <div className="text-[11px] text-slate-500">{lead.createdAt}</div>
+                          </td>
+
+                          {/* Customer Phone & City */}
+                          <td className="p-4">
+                            <div className="font-bold text-slate-800 font-mono flex items-center gap-1">
+                              <Smartphone className="w-3 h-3 text-slate-400" />
+                              <span>{lead.customerPhoneMasked}</span>
+                            </div>
+                            <div className="text-[11px] text-slate-500">{lead.customerCity}</div>
+                          </td>
+
+                          {/* Promoter & Link */}
+                          <td className="p-4">
+                            <div className="font-bold text-slate-900">{lead.promoterName}</div>
+                            <div className="text-[10px] text-blue-600 font-mono">{lead.trackingLinkCode} ({lead.channel})</div>
+                          </td>
+
+                          {/* Commission */}
+                          <td className="p-4">
+                            <div className="font-bold text-slate-950">{lead.commissionMAD.toFixed(2)} MAD</div>
+                            <div className="text-[10px] text-slate-500">Panier: {lead.orderValueMAD} MAD</div>
+                          </td>
+
+                          {/* Risk Score Meter */}
+                          <td className="p-4">
+                            <div className="flex items-center gap-1.5">
+                              <div className={`w-2.5 h-2.5 rounded-full ${
+                                lead.fraudRiskScore > 50 ? 'bg-red-500' : lead.fraudRiskScore > 20 ? 'bg-amber-500' : 'bg-emerald-500'
+                              }`} />
+                              <span className="font-bold text-slate-800">{lead.fraudRiskScore}%</span>
+                              <span className="text-[10px] text-slate-400 font-mono">({lead.ipAddress})</span>
+                            </div>
+                            {lead.fraudFlags.length > 0 && (
+                              <div className="text-[10px] text-red-600 font-semibold mt-0.5">
+                                {lead.fraudFlags[0]}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Status / Hold Countdown */}
+                          <td className="p-4">
+                            {lead.status === 'PENDING_HOLD' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900">
+                                <Clock className="w-3 h-3" />
+                                <span>Hold (48h)</span>
+                              </span>
+                            )}
+                            {lead.status === 'APPROVED' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900">
+                                <CheckCircle className="w-3 h-3" />
+                                <span>Validé</span>
+                              </span>
+                            )}
+                            {lead.status === 'FLAGGED_FAKE' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-100 text-red-900">
+                                <XCircle className="w-3 h-3" />
+                                <span>Fake Rejeté</span>
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Action Buttons */}
+                          <td className="p-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {lead.status === 'PENDING_HOLD' && (
+                                <>
+                                  <button
+                                    onClick={() => handleApproveLead(lead.id)}
+                                    title="Valider immédiatement ce lead"
+                                    className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold transition-colors cursor-pointer"
+                                  >
+                                    <Check className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => setActiveLeadForFlag(lead)}
+                                    title="Signaler comme faux lead / bot"
+                                    className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-bold transition-colors cursor-pointer"
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* MODULE 5: BIBLIOTHÈQUE DE CONTENU (ASSET HUB) */}
+        {/* ========================================================================= */}
+        {activeTab === 'content-library' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            
+            {/* Header & Upload CTA */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-white rounded-2xl border border-slate-200/90 shadow-2xs">
+              <div>
+                <h2 className="text-lg font-black text-slate-950 tracking-tight">
+                  Bibliothèque de Contenu & Ressources Créateurs
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Mettez à disposition de vos affiliés des photos HD studio, des scripts TikTok en Darija et vos guidelines officielles.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsUploadAssetModalOpen(true)}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer shadow-xs"
+              >
+                <UploadCloud className="w-4 h-4" />
+                <span>Téléverser un Asset</span>
+              </button>
+            </div>
+
+            {/* Category Filter Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+              {['ALL', 'High-Res Photos', 'Ad Scripts (Darija/FR)', 'Brand Guidelines', 'B-Roll Packs'].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setAssetCategoryFilter(cat)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                    assetCategoryFilter === cat
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  {cat === 'ALL' ? 'Tous les assets' : cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Assets Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredAssets.map(asset => (
+                <div key={asset.id} className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
+                  
+                  {asset.previewUrl && (
+                    <div className="h-40 w-full overflow-hidden bg-slate-100">
+                      <img src={asset.previewUrl} alt={asset.title} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+
+                  <div className="p-5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                        {asset.category}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-mono">{asset.fileSize}</span>
+                    </div>
+
+                    <h3 className="text-sm font-bold text-slate-950 leading-snug">{asset.title}</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed">{asset.description}</p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-[11px] text-slate-500 font-medium">
+                      <strong>{asset.downloadsCount}</strong> téléchargements
+                    </span>
+                    <button
+                      onClick={() => {
+                        showToast(isAr ? 'بدأ تحميل الملف...' : 'Téléchargement de l’asset initié.');
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Télécharger</span>
+                    </button>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* MODULE 6: PAIEMENTS & RIB (ESCROW & SETTLEMENT) */}
+        {/* ========================================================================= */}
+        {activeTab === 'payments' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            
+            {/* Escrow Wallet Overview */}
+            <div className="p-6 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-black text-slate-950 tracking-tight">
+                    Compte Séquestre & Règlement des Virement RIB
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Fonds garantis pour le déblocage automatisé des commissions aux affiliés marocains.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsTopUpModalOpen(true)}
+                  className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer shadow-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Recharger le Séquestre</span>
+                </button>
+              </div>
+
+              {/* 3 Escrow Stat Blocks */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-5 bg-blue-50/60 rounded-2xl border border-blue-100">
+                  <div className="text-xs font-bold uppercase tracking-wider text-blue-700 mb-1">
+                    Solde Séquestre Disponible
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black text-blue-950">
+                    {(escrowWallet?.availableEscrowMAD ?? 0).toLocaleString()} <span className="text-sm">MAD</span>
+                  </div>
+                  <div className="text-[11px] text-blue-700 mt-1 font-medium">Prêt pour les virements programmés</div>
+                </div>
+
+                <div className="p-5 bg-amber-50/60 rounded-2xl border border-amber-100">
+                  <div className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-1">
+                    Commissions en Période de Hold
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black text-amber-950">
+                    {(escrowWallet?.lockedInHoldMAD ?? 0).toLocaleString()} <span className="text-sm">MAD</span>
+                  </div>
+                  <div className="text-[11px] text-amber-700 mt-1 font-medium">Bloquées jusqu’à expiration du délai 48h</div>
+                </div>
+
+                <div className="p-5 bg-emerald-50/60 rounded-2xl border border-emerald-100">
+                  <div className="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-1">
+                    Total Versé aux Créateurs
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black text-emerald-950">
+                    {(escrowWallet?.totalPaidOutMAD ?? 0).toLocaleString()} <span className="text-sm">MAD</span>
+                  </div>
+                  <div className="text-[11px] text-emerald-700 mt-1 font-medium">Virement direct RIB (CIH, Attijariwafa, etc.)</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Payouts Table */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-950">Demandes de Retrait & Historique des Virements RIB</h3>
+                  <p className="text-xs text-slate-500">Traitement des gains affiliés (minimum 200 DH atteint)</p>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+                    <tr>
+                      <th className="p-4">ID Demande</th>
+                      <th className="p-4">Affilié / Promoteur</th>
+                      <th className="p-4">Montant (MAD)</th>
+                      <th className="p-4">Banque Marocaine & RIB (24 Chiffres)</th>
+                      <th className="p-4">Statut</th>
+                      <th className="p-4">Réf Virement</th>
+                      <th className="p-4 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {payouts.map(pay => (
+                      <tr key={pay.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="p-4 font-mono font-bold text-slate-900">{pay.id}</td>
+                        <td className="p-4 font-bold text-slate-900">{pay.promoterName}</td>
+                        <td className="p-4 font-black text-slate-950">{(pay.amountMAD ?? 0).toLocaleString()} MAD</td>
+                        <td className="p-4">
+                          <div className="font-bold text-slate-800">{pay.bankName}</div>
+                          <div className="font-mono text-[11px] text-slate-500">{pay.bankRib}</div>
+                        </td>
+                        <td className="p-4">
+                          {pay.status === 'PROCESSED' ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 flex items-center gap-1 w-fit">
+                              <CheckCircle className="w-3 h-3" />
+                              <span>Exécuté</span>
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 flex items-center gap-1 w-fit">
+                              <Clock className="w-3 h-3" />
+                              <span>En attente</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4 font-mono text-[11px] text-slate-600">
+                          {pay.transactionReference || '—'}
+                        </td>
+                        <td className="p-4 text-right">
+                          {pay.status === 'PENDING' ? (
+                            <button
+                              onClick={() => handleApprovePayout(pay.id)}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                            >
+                              Approuver Virement
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => showToast(isAr ? 'تم تحميل إشعار التحويل البنكي' : 'Reçu de virement RIB téléchargé.')}
+                              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+                            >
+                              Reçu RIB
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* PIXEL CODE MODAL / TAB */}
+        {/* ========================================================================= */}
+        {activeTab === 'pixel' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <div className="p-6 bg-slate-900 text-white rounded-2xl shadow-md border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-white flex items-center gap-2">
+                    <Code className="w-5 h-5 text-emerald-400" />
+                    <span>Intégration du Pixel JavaScript sur votre Thank You Page</span>
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Collez ce snippet sur la page de confirmation de commande de votre boutique (YouCan, Shopify, WooCommerce).
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleCopy(TRACKER_JS_CODE, 'pixelcode')}
+                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  {copiedKey === 'pixelcode' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedKey === 'pixelcode' ? 'Code Copié !' : 'Copier le Snippet'}</span>
+                </button>
+              </div>
+
+              {/* API Key Box */}
+              <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Clé API Publique du Marchand</div>
+                  <div className="text-xs font-mono text-emerald-400 font-bold">{currentMerchant.pixelApiKey}</div>
+                </div>
+                <button
+                  onClick={() => handleCopy(currentMerchant.pixelApiKey, 'apikey')}
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 transition-colors cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Code Snippet Box */}
+              <pre className="p-4 bg-slate-950 rounded-xl border border-slate-800 text-xs font-mono text-slate-300 overflow-x-auto leading-relaxed">
+                {TRACKER_JS_CODE}
+              </pre>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* ========================================================================= */}
+      {/* MODALS */}
+      {/* ========================================================================= */}
+      
+      {/* Flag Fake Lead Modal */}
+      {activeLeadForFlag && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-2 text-red-600 font-bold text-base">
+              <ShieldAlert className="w-5 h-5" />
+              <span>Signaler et Rejeter le Lead</span>
+            </div>
+            <p className="text-xs text-slate-600">
+              Indiquez la raison du rejet pour {activeLeadForFlag.leadReference} ({activeLeadForFlag.customerPhoneMasked}). La commission de {activeLeadForFlag.commissionMAD} MAD sera annulée.
+            </p>
+            <select
+              value={flagReason}
+              onChange={(e) => setFlagReason(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
+            >
+              <option value="Numéro non joignable / faux lead bot">Numéro non joignable / faux lead bot</option>
+              <option value="IP Cluster suspect (Plusieurs clics simultanés)">IP Cluster suspect (Plusieurs clics simultanés)</option>
+              <option value="Commande test annulée par le client">Commande test annulée par le client</option>
+              <option value="Adresse de livraison invalide">Adresse de livraison invalide</option>
+            </select>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => setActiveLeadForFlag(null)}
+                className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleFlagLeadFake(activeLeadForFlag.id, flagReason)}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold cursor-pointer shadow-xs"
+              >
+                Confirmer le Rejet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Creator Modal */}
+      {invitingCreator && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img src={invitingCreator.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+                <div>
+                  <h3 className="text-sm font-bold text-slate-950">Inviter {invitingCreator.fullName}</h3>
+                  <span className="text-xs text-blue-600 font-semibold">{invitingCreator.handle}</span>
+                </div>
+              </div>
+              <button onClick={() => setInvitingCreator(null)} className="p-1 rounded-lg text-slate-400 hover:text-slate-600">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSendInvite} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Commission Proposée (MAD par Lead Thank You Page)</label>
+                <input
+                  type="number"
+                  value={inviteCommissionMAD}
+                  onChange={(e) => setInviteCommissionMAD(Number(e.target.value))}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Message d’invitation personnalisé</label>
+                <textarea
+                  rows={4}
+                  value={inviteMessage}
+                  onChange={(e) => setInviteMessage(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 leading-relaxed"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setInvitingCreator(null)}
+                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer shadow-xs flex items-center gap-1.5"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Envoyer la proposition</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* New Campaign Modal */}
+      {isCampaignModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-950">Créer une Nouvelle Campagne d’Affiliation</h3>
+              <button onClick={() => setIsCampaignModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCampaign} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Titre de la Campagne / Produit</label>
                 <input
                   type="text"
-                  placeholder={isAr ? 'مثال: عمولة 15% على مبيعات المتجر' : 'Ex: 15% de commission sur les ventes'}
+                  required
+                  placeholder="Ex: Gamme Skincare Bio 2026"
                   value={campaignTitle}
                   onChange={(e) => setCampaignTitle(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">URL de la Page Produit / Landing Page</label>
+                <input
+                  type="url"
                   required
+                  value={campaignLandingUrl}
+                  onChange={(e) => setCampaignLandingUrl(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    {isAr ? 'نوع العمولة' : 'Modèle de Commission'}
-                  </label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Type de Rémunération</label>
                   <select
                     value={commissionType}
-                    onChange={(e) => setCommissionType(e.target.value as CommissionType)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 font-medium"
+                    onChange={(e: any) => setCommissionType(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
                   >
-                    <option value="PERCENTAGE">{isAr ? 'نسبة مئوية % من الطلب' : 'Pourcentage % du montant'}</option>
-                    <option value="FIXED_MAD">{isAr ? 'مبلغ ثابت بالدرهم (MAD)' : 'Montant fixe en MAD'}</option>
+                    <option value="FIXED_MAD">Montant Fixe (MAD / Lead)</option>
+                    <option value="PERCENTAGE">Pourcentage (% de la vente)</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    {commissionType === 'PERCENTAGE' ? (isAr ? 'القيمة (%)' : 'Valeur (%)') : (isAr ? 'القيمة (د.م)' : 'Valeur (MAD)')}
-                  </label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Valeur de la Commission</label>
                   <input
                     type="number"
                     value={commissionVal}
                     onChange={(e) => setCommissionVal(Number(e.target.value))}
-                    min={1}
-                    max={commissionType === 'PERCENTAGE' ? 50 : 2000}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 font-bold text-slate-900"
-                    required
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    {isAr ? 'صلاحية الكوكي (بالأيام)' : 'Durée Cookie (Jours)'}
-                  </label>
-                  <input
-                    type="number"
-                    value={cookieDays}
-                    onChange={(e) => setCookieDays(Number(e.target.value))}
-                    min={7}
-                    max={90}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    {isAr ? 'تخصيص كود خصم (اختياري)' : 'Code Promo Dédié (Optionnel)'}
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="VIP_SARAH"
-                    value={promoCodeInput}
-                    onChange={(e) => setPromoCodeInput(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 uppercase font-mono font-bold"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Délai Anti-Fraude (Hold avant déblocage)</label>
+                <select
+                  value={holdPeriodSetting}
+                  onChange={(e) => setHoldPeriodSetting(Number(e.target.value))}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
+                >
+                  <option value={24}>24 Heures (Express)</option>
+                  <option value={48}>48 Heures (Recommandé E-commerce)</option>
+                  <option value={72}>72 Heures (Sécurité Maximale)</option>
+                </select>
               </div>
 
-              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-slate-600 text-[11px] space-y-1">
-                <strong>{isAr ? 'قواعد الأداء والتسوية:' : 'Règles de Règlement :'}</strong>
-                <p>• {isAr ? 'تحتسب العمولة تلقائياً عند إتمام الزبون لعملية الشراء عبر رابط أو كود المسوق.' : 'La commission est enregistrée automatiquement dès qu’un achat est complété via le lien du créateur.'}</p>
-                <p>• {isAr ? 'يمكن للمسوق سحب رصيده عند بلوغ الحد الأدنى 200 درهم مباشرة إلى حسابه البنكي.' : 'Le promoteur peut retirer ses gains dès le seuil de 200 MAD vers son compte bancaire.'}</p>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3">
+              <div className="flex items-center justify-end gap-2 pt-3">
                 <button
                   type="button"
                   onClick={() => setIsCampaignModalOpen(false)}
-                  className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
                 >
-                  {isAr ? 'إلغاء' : 'Annuler'}
+                  Annuler
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer shadow-xs"
                 >
-                  {isAr ? 'حفظ ونشر العرض' : 'Enregistrer & Publier'}
+                  Lancer la Campagne
                 </button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Asset Modal */}
+      {isUploadAssetModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-950">Téléverser un Asset Créatif</h3>
+              <button onClick={() => setIsUploadAssetModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUploadAsset} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Titre de la ressource</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Pack Rushs 4K Reels & Hooks Darija"
+                  value={newAssetTitle}
+                  onChange={(e) => setNewAssetTitle(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Catégorie</label>
+                <select
+                  value={newAssetCategory}
+                  onChange={(e: any) => setNewAssetCategory(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
+                >
+                  <option value="High-Res Photos">Photos Haute Définition</option>
+                  <option value="Ad Scripts (Darija/FR)">Scripts Publicitaires (Darija / FR)</option>
+                  <option value="Brand Guidelines">Charte Graphique & Logos</option>
+                  <option value="UGC Video Hooks">Hooks & Idées Vidéo UGC</option>
+                  <option value="B-Roll Packs">Packs B-Roll & Vidéos Produits</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Description & Conseils d’utilisation</label>
+                <textarea
+                  rows={3}
+                  value={newAssetDescription}
+                  onChange={(e) => setNewAssetDescription(e.target.value)}
+                  placeholder="Expliquez comment les créateurs doivent utiliser ce pack..."
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900"
+                />
+              </div>
+
+              {/* Upload Dropzone */}
+              <div className="p-6 border-2 border-dashed border-slate-200 rounded-2xl text-center bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer">
+                <UploadCloud className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                <div className="text-xs font-bold text-slate-800">Glissez-déposez vos fichiers ici (ZIP, MP4, PDF, PNG)</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">Jusqu’à 500 MB par fichier</div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsUploadAssetModalOpen(false)}
+                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer shadow-xs"
+                >
+                  Enregistrer l’Asset
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Top Up Escrow Modal */}
+      {isTopUpModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-950">Recharger le Compte Séquestre</h3>
+              <button onClick={() => setIsTopUpModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleTopUpEscrow} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Montant à créditer (MAD)</label>
+                <input
+                  type="number"
+                  required
+                  min={500}
+                  value={topUpAmountMAD}
+                  onChange={(e) => setTopUpAmountMAD(Number(e.target.value))}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base font-black text-slate-900"
+                />
+              </div>
+
+              <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 text-xs text-blue-900 space-y-1">
+                <div className="font-bold">Moyen de paiement :</div>
+                <div>• Virement direct vers le compte séquestre RoketLead (CIH Bank)</div>
+                <div>• Paiement par carte bancaire marocaine CMI sécurisé</div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsTopUpModalOpen(false)}
+                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer shadow-xs"
+                >
+                  Confirmer le Rechargement
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Store Profile & Logo Modal */}
+      {isEditStoreModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-200 my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center">
+                  <Building2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-950">Modifier le Profil de la Boutique</h3>
+                  <p className="text-xs text-slate-500">Mettez à jour le logo, le nom et les coordonnées de votre marque</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsEditStoreModalOpen(false)} 
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveStoreProfile} className="space-y-4">
+              
+              {/* Logo Upload & Preview */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2">Logo de la marque</label>
+                <div className="flex items-center gap-4">
+                  <div className="relative group shrink-0">
+                    {editLogoUrl ? (
+                      <img 
+                        src={editLogoUrl} 
+                        alt="Logo preview" 
+                        className="w-16 h-16 rounded-xl object-cover border-2 border-blue-500 shadow-sm" 
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-blue-50 border-2 border-blue-300 flex items-center justify-center text-blue-600 font-bold text-lg">
+                        <StoreLogo slug={currentMerchant.slug} storeName={editStoreName || currentMerchant.storeName} size="lg" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                    <input
+                      type="file"
+                      ref={logoFileInputRef}
+                      onChange={handleLogoFileChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => logoFileInputRef.current?.click()}
+                        className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Téléverser un logo</span>
+                      </button>
+                      {editLogoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setEditLogoUrl('')}
+                          className="px-2.5 py-1.5 rounded-xl text-red-600 hover:bg-red-50 text-xs font-semibold transition-all cursor-pointer"
+                        >
+                          Supprimer
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500">Formats PNG, JPG ou WebP (max. 5 Mo)</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Nom & Catégorie */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Nom de la Boutique</label>
+                  <input
+                    type="text"
+                    required
+                    value={editStoreName}
+                    onChange={(e) => setEditStoreName(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                    placeholder="ex: Atlas Botanicals"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Secteur d’Activité</label>
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden cursor-pointer"
+                  >
+                    <option value="Cosmétiques & Bio">Cosmétiques & Bio</option>
+                    <option value="High-Tech & Gadgets">High-Tech & Gadgets</option>
+                    <option value="Mode & Caftans">Mode & Caftans</option>
+                    <option value="Artisanat & Décoration">Artisanat & Décoration</option>
+                    <option value="Santé & Nutrition">Santé & Nutrition</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Ville & Site Web */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Ville Siège</label>
+                  <input
+                    type="text"
+                    required
+                    value={editCity}
+                    onChange={(e) => setEditCity(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                    placeholder="ex: Casablanca"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Site Web (Boutique en ligne)</label>
+                  <input
+                    type="url"
+                    required
+                    value={editWebsite}
+                    onChange={(e) => setEditWebsite(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                    placeholder="https://votreboutique.ma"
+                  />
+                </div>
+              </div>
+
+              {/* Téléphone & Commission par défaut */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Numéro Téléphone Support</label>
+                  <input
+                    type="text"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                    placeholder="+212 5 22 00 00 00"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Commission par Lead (MAD)</label>
+                  <input
+                    type="number"
+                    min={5}
+                    value={editDefaultPayoutMAD}
+                    onChange={(e) => setEditDefaultPayoutMAD(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsEditStoreModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white text-xs font-bold cursor-pointer shadow-xs transition-all flex items-center gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Enregistrer les modifications</span>
+                </button>
+              </div>
+
             </form>
           </div>
         </div>
@@ -1296,15 +2179,3 @@ export const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     </div>
   );
 };
-
-// Helper Coin Icon
-function CoinsIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="8" cy="8" r="6" />
-      <path d="M18.09 10.37A6 6 0 1 1 10.34 18" />
-      <path d="M7 6h1v4" />
-      <path d="m16.71 13.88.7.71-2.82 2.82" />
-    </svg>
-  );
-}

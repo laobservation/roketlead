@@ -55,6 +55,10 @@ export interface PromoterProfile {
   id: string;
   userId: string;
   fullName: string;
+  avatarUrl?: string;
+  email?: string;
+  niche?: string;
+  socialHandle?: string;
   instagramHandle?: string;
   tiktokHandle?: string;
   youtubeChannel?: string;
@@ -65,6 +69,7 @@ export interface PromoterProfile {
   walletBalanceMAD: number;
   availableBalanceMAD: number;
   pendingCommissionMAD: number;
+  pendingBalanceMAD?: number;
   lifetimePaidMAD: number;
   totalEarnedMAD: number;
   tier: 'Starter' | 'Verified Pro' | 'Elite Partner';
@@ -207,11 +212,97 @@ export interface WithdrawalRequest {
 // Alias for backward compatibility
 export type PayoutRequest = WithdrawalRequest;
 
+export interface CreatorDiscoveryItem {
+  id: string;
+  fullName: string;
+  handle: string;
+  avatarUrl: string;
+  niche: 'Beauty & Skincare' | 'Tech & Electronics' | 'Fashion & Caftan' | 'Home & Artisanal' | 'Fitness & Nutrition' | 'Food & Gourmet';
+  primaryPlatform: 'Instagram' | 'TikTok' | 'YouTube' | 'WhatsApp';
+  audienceSize: string;
+  followersCount: number;
+  fraudQualityScore: number; // 0-100 score
+  avgConversionRate: number; // e.g. 4.2%
+  suggestedPayoutMAD: number; // e.g. 35 MAD per lead
+  bio: string;
+  topCities: string[];
+  recentBrandCollabs: string[];
+  isVerified: boolean;
+}
+
+export interface ContentAsset {
+  id: string;
+  merchantId: string;
+  title: string;
+  category: 'High-Res Photos' | 'Ad Scripts (Darija/FR)' | 'Brand Guidelines' | 'UGC Video Hooks' | 'B-Roll Packs';
+  fileFormat: string;
+  fileSize: string;
+  downloadUrl: string;
+  previewUrl?: string;
+  description: string;
+  downloadsCount: number;
+  createdAt: string;
+}
+
 export interface SystemAuditLog {
   id: string;
-  type: 'COD_STATUS_UPDATE' | 'COMMISSION_CREDITED' | 'MERCHANT_SIGNUP' | 'PAYOUT_TRIGGERED' | 'FRAUD_FLAG';
+  type: string;
   title: string;
   details: string;
   timestamp: string;
-  severity: 'info' | 'success' | 'warning' | 'error';
+  severity: 'success' | 'info' | 'warning' | 'error';
+  adminEmail?: string;
+  ipAddress?: string;
+}
+
+export interface UGCSubmission {
+  id: string;
+  promoterId: string;
+  promoterName: string;
+  promoterHandle?: string;
+  promoterAvatar?: string;
+  merchantId: string;
+  merchantName: string;
+  campaignTitle?: string;
+  contentType: 'Reel Draft' | 'TikTok Video' | 'Story Sequence' | 'Unboxing Video' | 'TikTok Reel' | string;
+  videoLink?: string;
+  contentUrl?: string;
+  notes: string;
+  status: 'PENDING_REVIEW' | 'APPROVED' | 'CHANGES_REQUESTED';
+  bountyRewardMAD?: number;
+  feedback?: string;
+  submittedAt: string;
+  publishedUrl?: string;
+}
+
+export interface EscrowWallet {
+  merchantId: string;
+  availableEscrowMAD: number;
+  lockedInHoldMAD: number;
+  totalPaidOutMAD: number;
+  nextScheduledPayout: string;
+  autoPayoutFrequency: 'Weekly (Mondays)' | 'Bi-Weekly' | 'Monthly';
+  payoutMethod: 'RIB Transfer (CIH, Attijariwafa, BMCE)';
+}
+
+export interface LeadValidationItem {
+  id: string;
+  leadReference: string;
+  merchantId: string;
+  promoterId: string;
+  promoterName: string;
+  promoterHandle: string;
+  trackingLinkCode: string;
+  channel: string;
+  customerPhoneMasked: string;
+  customerCity: string;
+  ipAddress: string;
+  orderValueMAD: number;
+  commissionMAD: number;
+  holdPeriodHours: number;
+  holdExpiresAt: string;
+  status: 'PENDING_HOLD' | 'APPROVED' | 'FLAGGED_FAKE';
+  fraudRiskScore: number; // 0 (safe) to 100 (high risk)
+  fraudFlags: string[];
+  createdAt: string;
 }

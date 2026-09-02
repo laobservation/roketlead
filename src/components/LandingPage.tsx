@@ -299,24 +299,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                   {/* Top Bar of the Mock Dashboard */}
                   <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-100 mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-lg shadow-xs shadow-blue-500/30">
-                        r.
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
+                          {isAr ? 'منصة العمولة والتتبع' : 'Plateforme d’Affiliation & Tracking'}
+                        </h3>
+                        <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          {isAr ? 'بيكسل نشط' : 'Pixel Actif'}
+                        </span>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base font-bold text-slate-900">
-                            {isAr ? 'مركز تحكم البائع (YouCan / Shopify)' : 'Plateforme d’Affiliation & Tracking Maroc'}
-                          </h3>
-                          <span className="px-2 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            {isAr ? 'بيكسل مباشر (Thank You Page)' : 'Pixel Actif (Thank You Page)'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-500">
-                          {isAr ? 'تتبع فوري ومباشر لجميع الليدات والمبيعات' : 'Attribution en temps réel 100% automatisée'}
-                        </p>
-                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {isAr ? 'تتبع فوري ومباشر لجميع الليدات والمبيعات' : 'Attribution en temps réel 100% automatisée'}
+                      </p>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -446,24 +441,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <div className="animate-in fade-in slide-in-from-left-4 duration-300">
                   {/* Top Bar of the Promoter Dashboard */}
                   <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-100 mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-lg shadow-xs shadow-emerald-500/30">
-                        ⚡
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
+                          {isAr ? 'لوحة تحكم المسوق وصانع المحتوى' : 'Espace Promoteurs & Affiliation'}
+                        </h3>
+                        <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          {isAr ? 'روابط نشطة' : 'Liens Actifs (rkt.ma)'}
+                        </span>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base font-bold text-slate-900">
-                            {isAr ? 'لوحة تحكم المسوق / صانع المحتوى' : 'Espace Affilié & Créateur de Contenu'}
-                          </h3>
-                          <span className="px-2 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            {isAr ? 'روابط التتبع نشطة (rkt.ma)' : 'Liens Trackés Actifs (rkt.ma)'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-500">
-                          {isAr ? 'أرباحك المباشرة وعمولات كل ليد محقق' : 'Suivi de vos gains directs et retraits bancaires'}
-                        </p>
-                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {isAr ? 'أرباحك المباشرة وعمولات كل ليد محقق' : 'Suivi de vos gains directs et retraits bancaires'}
+                      </p>
                     </div>
 
                     <div className="flex items-center gap-2">
