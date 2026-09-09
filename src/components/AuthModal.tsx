@@ -30,7 +30,7 @@ interface AuthModalProps {
   initialMode?: 'signin' | 'signup';
   onLoginSeller: (merchant: MerchantProfile) => void;
   onLoginPromoter: (affiliate: AffiliateProfile) => void;
-  onOpenAdminLogin: () => void;
+  onOpenAdminLogin?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -517,24 +517,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </form>
           )}
 
-          {/* SaaS Owner Hidden Admin Note */}
-          <div className="mt-5 pt-3 border-t border-dashed border-slate-200 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400">
-            <span className="flex items-center gap-1">
+          {/* Security Guarantee Note */}
+          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-center text-[10px] sm:text-[11px] text-slate-400">
+            <span className="flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-              TLS 256-bit Encrypted
+              <span>Chiffrement TLS 256-bit • Données sécurisées au Maroc</span>
             </span>
-            <button
-              type="button"
-              id="admin-login-hint-btn"
-              onClick={() => {
-                onClose();
-                onOpenAdminLogin();
-              }}
-              className="text-slate-400 hover:text-slate-700 hover:underline cursor-pointer flex items-center gap-1"
-            >
-              <Lock className="w-3 h-3" />
-              <span>/admin/login</span>
-            </button>
           </div>
 
         </div>

@@ -28,7 +28,6 @@ interface NavbarProps {
   onViewChange: (view: 'landing' | 'admin' | 'merchant' | 'affiliate' | 'earlyaccess') => void;
   onOpenSignIn?: (initialTab?: 'seller' | 'promoter') => void;
   onOpenSignUp?: (initialTab?: 'seller' | 'promoter') => void;
-  onOpenAdminLogin?: () => void;
   onNavigateSection?: (sectionId: string) => void;
   currentUserRole?: 'GUEST' | 'MERCHANT' | 'AFFILIATE' | 'SUPER_ADMIN';
   activeMerchant?: MerchantProfile | null;
@@ -41,7 +40,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onViewChange, 
   onOpenSignIn,
   onOpenSignUp,
-  onOpenAdminLogin,
   onNavigateSection,
   currentUserRole = 'GUEST',
   activeMerchant,

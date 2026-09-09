@@ -43,7 +43,6 @@ interface LandingPageProps {
   onStartSeller?: () => void;
   onStartPromoter?: () => void;
   onNavigateToAffiliate: () => void;
-  onNavigateToAdmin: () => void;
   onNavigateToMerchant?: () => void;
   onNavigateToEarlyAccess?: () => void;
   onSelectMerchant?: (merchant: MerchantProfile) => void;
@@ -53,7 +52,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onStartSeller,
   onStartPromoter,
   onNavigateToAffiliate, 
-  onNavigateToAdmin,
   onNavigateToMerchant,
   onNavigateToEarlyAccess,
   onSelectMerchant 
@@ -83,43 +81,80 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   // Pulse animation indicators when numbers tick
   const [pulsingStat, setPulsingStat] = useState<string | null>(null);
+  const [clickPulse, setClickPulse] = useState<boolean>(false);
+  const [sellerClickDelta, setSellerClickDelta] = useState<number>(0);
+  const [sellerLeadDelta, setSellerLeadDelta] = useState<number>(0);
+  const [sellerRevDelta, setSellerRevDelta] = useState<number>(0);
+  const [promoterClickDelta, setPromoterClickDelta] = useState<number>(0);
+  const [promoterLeadDelta, setPromoterLeadDelta] = useState<number>(0);
+  const [promoterRevDelta, setPromoterRevDelta] = useState<number>(0);
 
-  // Auto-increment live moving numbers realistically every 2.5 seconds
+  // Live real-time feed transaction events
+  const liveFeedPool = [
+    { text: '+1 lead validé via Instagram Story • Atlas Botanicals (Casablanca)', textAr: '+1 ليد مؤكد عبر ستوري إنستغرام • أطلس بوتانيكلز (الدار البيضاء)' },
+    { text: '+1 lead confirmé via TikTok Ads • Caftan Royal (Marrakech)', textAr: '+1 ليد مؤكد عبر تيك توك • قفطان رويال (مراكش)' },
+    { text: '+4 clics enregistrés sur lien bio créateur • Fès', textAr: '+4 نقرات مسجلة على رابط البايو • فاس' },
+    { text: '+1 lead validé • ElectroMaroc (+45 MAD commission) • Tanger', textAr: '+1 ليد مؤكد • إلكترو ماروك (عمولة 45 د.م) • طنجة' },
+    { text: '+1 lead validé via WhatsApp Catalog • Zellige Deco (Rabat)', textAr: '+1 ليد مؤكد عبر كتالوج واتساب • زليج ديكو (الرباط)' },
+    { text: '+1 lead confirmé Thank You Page • Bio Huile Argan (Agadir)', textAr: '+1 ليد مسجل على صفحة الشكر • زيت أركان حيوي (أكادير)' },
+  ];
+  const [currentFeedIndex, setCurrentFeedIndex] = useState(0);
+
+  // Auto-increment live moving numbers rapidly (every 720ms) to catch user attention
   useEffect(() => {
+    let tickCount = 0;
     const interval = setInterval(() => {
+      tickCount += 1;
       const randomTrigger = Math.random();
       
       setLiveStats(prev => {
         const next = { ...prev };
         
-        // Seller increments
-        if (randomTrigger > 0.3) {
+        // Seller increments: clicks tick almost every cycle (85% of ticks)
+        if (randomTrigger > 0.15) {
           const clickAdd = Math.floor(Math.random() * 4) + 1;
           next.sellerClicks += clickAdd;
+          setSellerClickDelta(clickAdd);
+          setClickPulse(true);
+          setTimeout(() => setClickPulse(false), 450);
         }
-        if (randomTrigger > 0.6) {
+
+        // Seller leads: tick frequently (every 1.4s)
+        if (randomTrigger > 0.48) {
           next.sellerLeads += 1;
-          const commissionAdd = Math.floor(Math.random() * 45) + 15; // 15 to 60 MAD per lead
+          const commissionAdd = Math.floor(Math.random() * 45) + 20; // 20 to 65 MAD per lead
           next.sellerRevenueMAD += commissionAdd;
+          setSellerLeadDelta(1);
+          setSellerRevDelta(commissionAdd);
           setPulsingStat('seller-lead');
-          setTimeout(() => setPulsingStat(null), 1000);
+          setCurrentFeedIndex(i => (i + 1) % liveFeedPool.length);
+          setTimeout(() => setPulsingStat(null), 500);
+        }
+
+        // Occasionally increment active affiliates count
+        if (tickCount % 12 === 0) {
+          next.sellerAffiliates += 1;
         }
         
-        // Promoter increments
-        if (randomTrigger > 0.4) {
-          next.promoterClicks += Math.floor(Math.random() * 2) + 1;
+        // Promoter increments: rapid clicks & conversions
+        if (randomTrigger > 0.2) {
+          const pClickAdd = Math.floor(Math.random() * 3) + 1;
+          next.promoterClicks += pClickAdd;
+          setPromoterClickDelta(pClickAdd);
         }
-        if (randomTrigger > 0.75) {
+        if (randomTrigger > 0.5) {
           next.promoterLeads += 1;
-          const earningAdd = Math.floor(Math.random() * 50) + 20;
+          const earningAdd = Math.floor(Math.random() * 50) + 25;
           next.promoterEarningsMAD += earningAdd;
+          setPromoterLeadDelta(1);
+          setPromoterRevDelta(earningAdd);
           setPulsingStat('promoter-lead');
-          setTimeout(() => setPulsingStat(null), 1000);
+          setTimeout(() => setPulsingStat(null), 500);
         }
         
         return next;
       });
-    }, 2400);
+    }, 720);
 
     return () => clearInterval(interval);
   }, []);
@@ -305,7 +340,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                           {isAr ? 'منصة العمولة والتتبع' : 'Plateforme d’Affiliation & Tracking'}
                         </h3>
                         <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                          </span>
                           {isAr ? 'بيكسل نشط' : 'Pixel Actif'}
                         </span>
                       </div>
@@ -334,39 +372,80 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
                   </div>
 
+                  {/* Real-time Moroccan conversion live ticker bar */}
+                  <div className="mb-4 px-3 py-1.5 bg-gradient-to-r from-emerald-50/70 via-slate-50 to-blue-50/70 rounded-xl border border-slate-200/80 flex items-center justify-between gap-2 overflow-hidden text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="relative flex h-2 w-2 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      <span className="font-semibold text-slate-800 truncate text-[11px] sm:text-xs">
+                        {isAr ? liveFeedPool[currentFeedIndex].textAr : liveFeedPool[currentFeedIndex].text}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1">
+                      <span className="w-1 h-1 rounded-full bg-emerald-600 animate-pulse" />
+                      {isAr ? 'مباشر' : 'Live'}
+                    </span>
+                  </div>
+
                   {/* Real-time KPI Stats Cards with Live Moving Ticker */}
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     
                     {/* Card 1: Leads Trackés (Thank You Page) */}
-                    <div className={`p-4 bg-slate-50/80 rounded-2xl border transition-all duration-300 ${
-                      pulsingStat === 'seller-lead' ? 'border-emerald-400 bg-emerald-50/30 scale-[1.02]' : 'border-slate-100'
+                    <div className={`p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden ${
+                      pulsingStat === 'seller-lead' 
+                        ? 'border-emerald-400 ring-2 ring-emerald-400/20 bg-emerald-50/50 shadow-sm scale-[1.02]' 
+                        : 'border-slate-100 bg-slate-50/80'
                     }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-slate-500">
                           {isAr ? 'الليدات المؤكدة (صفحة الشكر)' : 'Leads Trackés (Thank You Page)'}
                         </span>
-                        <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                          +87.3%
-                        </span>
+                        <div className="flex items-center gap-1">
+                          {pulsingStat === 'seller-lead' && (
+                            <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded-full animate-bounce">
+                              +{sellerLeadDelta}
+                            </span>
+                          )}
+                          <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            +87.3%
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-xl sm:text-2xl font-extrabold text-slate-950 font-mono tracking-tight flex items-baseline gap-1.5">
-                        <span>{liveStats.sellerLeads.toLocaleString()}</span>
+                      <div className="text-xl sm:text-2xl font-extrabold font-mono tracking-tight flex items-baseline gap-1.5">
+                        <span className={pulsingStat === 'seller-lead' ? 'text-emerald-600 scale-105 transition-all duration-150' : 'text-slate-950 transition-colors'}>
+                          {liveStats.sellerLeads.toLocaleString()}
+                        </span>
                         <span className="text-xs font-bold text-slate-500 font-sans">{isAr ? 'ليد' : 'Leads'}</span>
                       </div>
                     </div>
 
                     {/* Card 2: Clics Trackés */}
-                    <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100 transition-all">
+                    <div className={`p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden ${
+                      clickPulse 
+                        ? 'border-blue-400 ring-2 ring-blue-400/20 bg-blue-50/40 shadow-xs scale-[1.01]' 
+                        : 'border-slate-100 bg-slate-50/80'
+                    }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-slate-500">
                           {isAr ? 'النقرات المؤكدة' : 'Clics Trackés'}
                         </span>
-                        <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                          +44.2%
-                        </span>
+                        <div className="flex items-center gap-1">
+                          {clickPulse && (
+                            <span className="text-[10px] font-black text-blue-700 bg-blue-100 px-1.5 py-0.2 rounded-full animate-pulse">
+                              +{sellerClickDelta}
+                            </span>
+                          )}
+                          <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            +44.2%
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-xl sm:text-2xl font-extrabold text-slate-950 font-mono tracking-tight flex items-baseline gap-1.5">
-                        <span>{liveStats.sellerClicks.toLocaleString()}</span>
+                      <div className="text-xl sm:text-2xl font-extrabold font-mono tracking-tight flex items-baseline gap-1.5">
+                        <span className={clickPulse ? 'text-blue-600 transition-colors duration-150' : 'text-slate-950 transition-colors'}>
+                          {liveStats.sellerClicks.toLocaleString()}
+                        </span>
                         <span className="text-xs font-bold text-slate-500 font-sans">{isAr ? 'نقرة' : 'Clics'}</span>
                       </div>
                     </div>
@@ -388,19 +467,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
 
                     {/* Card 4: Commissions Générées */}
-                    <div className={`p-4 bg-slate-50/80 rounded-2xl border transition-all duration-300 ${
-                      pulsingStat === 'seller-lead' ? 'border-blue-400 bg-blue-50/40 scale-[1.02]' : 'border-slate-100'
+                    <div className={`p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden ${
+                      pulsingStat === 'seller-lead' 
+                        ? 'border-blue-400 ring-2 ring-blue-400/20 bg-blue-50/40 shadow-sm scale-[1.02]' 
+                        : 'border-slate-100 bg-slate-50/80'
                     }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-slate-500">
                           {isAr ? 'العمولات المكتسبة' : 'Commissions Générées'}
                         </span>
-                        <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                          +27.6%
-                        </span>
+                        <div className="flex items-center gap-1">
+                          {pulsingStat === 'seller-lead' && (
+                            <span className="text-[10px] font-black text-blue-700 bg-blue-100 px-1.5 py-0.2 rounded-full animate-bounce">
+                              +{sellerRevDelta} DH
+                            </span>
+                          )}
+                          <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                            +27.6%
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-xl sm:text-2xl font-extrabold text-slate-950 font-mono tracking-tight flex items-baseline gap-1.5">
-                        <span>{liveStats.sellerRevenueMAD.toLocaleString()}</span>
+                      <div className="text-xl sm:text-2xl font-extrabold font-mono tracking-tight flex items-baseline gap-1.5">
+                        <span className={pulsingStat === 'seller-lead' ? 'text-blue-600 scale-105 transition-all duration-150' : 'text-slate-950 transition-colors'}>
+                          {liveStats.sellerRevenueMAD.toLocaleString()}
+                        </span>
                         <span className="text-xs font-bold text-slate-500 font-sans">{isAr ? 'د.م' : 'MAD'}</span>
                       </div>
                     </div>
@@ -447,7 +537,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                           {isAr ? 'لوحة تحكم المسوق وصانع المحتوى' : 'Espace Promoteurs & Affiliation'}
                         </h3>
                         <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                          </span>
                           {isAr ? 'روابط نشطة' : 'Liens Actifs (rkt.ma)'}
                         </span>
                       </div>
@@ -476,39 +569,80 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
                   </div>
 
+                  {/* Real-time Moroccan conversion live ticker bar for Promoter */}
+                  <div className="mb-4 px-3 py-1.5 bg-gradient-to-r from-emerald-50/70 via-slate-50 to-teal-50/70 rounded-xl border border-slate-200/80 flex items-center justify-between gap-2 overflow-hidden text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="relative flex h-2 w-2 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      <span className="font-semibold text-slate-800 truncate text-[11px] sm:text-xs">
+                        {isAr ? liveFeedPool[currentFeedIndex].textAr : liveFeedPool[currentFeedIndex].text}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1">
+                      <span className="w-1 h-1 rounded-full bg-emerald-600 animate-pulse" />
+                      {isAr ? 'مباشر' : 'Live'}
+                    </span>
+                  </div>
+
                   {/* Real-time KPI Stats Cards for Promoter with Live Moving Ticker */}
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     
                     {/* Card 1: Mes Leads Validés */}
-                    <div className={`p-4 bg-slate-50/80 rounded-2xl border transition-all duration-300 ${
-                      pulsingStat === 'promoter-lead' ? 'border-emerald-400 bg-emerald-50/30 scale-[1.02]' : 'border-slate-100'
+                    <div className={`p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden ${
+                      pulsingStat === 'promoter-lead' 
+                        ? 'border-emerald-400 ring-2 ring-emerald-400/20 bg-emerald-50/50 shadow-sm scale-[1.02]' 
+                        : 'border-slate-100 bg-slate-50/80'
                     }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-slate-500">
                           {isAr ? 'الليدات المحققة' : 'Mes Leads Validés'}
                         </span>
-                        <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                          +92.4%
-                        </span>
+                        <div className="flex items-center gap-1">
+                          {pulsingStat === 'promoter-lead' && (
+                            <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded-full animate-bounce">
+                              +{promoterLeadDelta}
+                            </span>
+                          )}
+                          <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            +92.4%
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-xl sm:text-2xl font-extrabold text-slate-950 font-mono tracking-tight flex items-baseline gap-1.5">
-                        <span>{liveStats.promoterLeads.toLocaleString()}</span>
+                      <div className="text-xl sm:text-2xl font-extrabold font-mono tracking-tight flex items-baseline gap-1.5">
+                        <span className={pulsingStat === 'promoter-lead' ? 'text-emerald-600 scale-105 transition-all duration-150' : 'text-slate-950 transition-colors'}>
+                          {liveStats.promoterLeads.toLocaleString()}
+                        </span>
                         <span className="text-xs font-bold text-slate-500 font-sans">{isAr ? 'ليد' : 'Leads'}</span>
                       </div>
                     </div>
 
                     {/* Card 2: Clics sur mes Liens */}
-                    <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
+                    <div className={`p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden ${
+                      promoterClickDelta > 0 
+                        ? 'border-emerald-300 ring-2 ring-emerald-400/15 bg-emerald-50/30 shadow-xs' 
+                        : 'border-slate-100 bg-slate-50/80'
+                    }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-slate-500">
                           {isAr ? 'النقرات على روابطي' : 'Clics Liens (Bio/Story)'}
                         </span>
-                        <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                          +58.1%
-                        </span>
+                        <div className="flex items-center gap-1">
+                          {promoterClickDelta > 0 && (
+                            <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded-full animate-pulse">
+                              +{promoterClickDelta}
+                            </span>
+                          )}
+                          <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            +58.1%
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-xl sm:text-2xl font-extrabold text-slate-950 font-mono tracking-tight flex items-baseline gap-1.5">
-                        <span>{liveStats.promoterClicks.toLocaleString()}</span>
+                      <div className="text-xl sm:text-2xl font-extrabold font-mono tracking-tight flex items-baseline gap-1.5">
+                        <span className={promoterClickDelta > 0 ? 'text-emerald-600 transition-colors duration-150' : 'text-slate-950 transition-colors'}>
+                          {liveStats.promoterClicks.toLocaleString()}
+                        </span>
                         <span className="text-xs font-bold text-slate-500 font-sans">{isAr ? 'نقرة' : 'Clics'}</span>
                       </div>
                     </div>
@@ -530,19 +664,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
 
                     {/* Card 4: Gains Cumulés (MAD) */}
-                    <div className={`p-4 bg-slate-50/80 rounded-2xl border transition-all duration-300 ${
-                      pulsingStat === 'promoter-lead' ? 'border-emerald-400 bg-emerald-50/40 scale-[1.02]' : 'border-slate-100'
+                    <div className={`p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden ${
+                      pulsingStat === 'promoter-lead' 
+                        ? 'border-emerald-400 ring-2 ring-emerald-400/20 bg-emerald-50/50 shadow-sm scale-[1.02]' 
+                        : 'border-slate-100 bg-slate-50/80'
                     }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-slate-500">
                           {isAr ? 'أرباحي الإجمالية (د.م)' : 'Gains Cumulés (MAD)'}
                         </span>
-                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-                          Dispo RIB
-                        </span>
+                        <div className="flex items-center gap-1">
+                          {pulsingStat === 'promoter-lead' && (
+                            <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded-full animate-bounce">
+                              +{promoterRevDelta} DH
+                            </span>
+                          )}
+                          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            Dispo RIB
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-xl sm:text-2xl font-extrabold text-emerald-600 font-mono tracking-tight flex items-baseline gap-1.5">
-                        <span>{liveStats.promoterEarningsMAD.toLocaleString()}</span>
+                      <div className="text-xl sm:text-2xl font-extrabold font-mono tracking-tight flex items-baseline gap-1.5">
+                        <span className={pulsingStat === 'promoter-lead' ? 'text-emerald-700 scale-105 transition-all duration-150' : 'text-emerald-600 transition-colors'}>
+                          {liveStats.promoterEarningsMAD.toLocaleString()}
+                        </span>
                         <span className="text-xs font-bold text-emerald-700 font-sans">{isAr ? 'د.م' : 'MAD'}</span>
                       </div>
                     </div>

@@ -94,7 +94,6 @@ import { StoreLogo } from './StoreLogo';
 
 interface MerchantDashboardProps {
   onSwitchToAffiliateView?: () => void;
-  onSwitchToAdminView?: () => void;
 }
 
 const PERFORMANCE_DATA_7D = [
@@ -108,8 +107,7 @@ const PERFORMANCE_DATA_7D = [
 ];
 
 export const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
-  onSwitchToAffiliateView,
-  onSwitchToAdminView
+  onSwitchToAffiliateView
 }) => {
   const { language, t, isRTL } = useLanguage();
   const isAr = language === 'ar';

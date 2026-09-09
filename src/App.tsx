@@ -30,7 +30,19 @@ export default function App() {
       const hash = window.location.hash.toLowerCase();
       const search = window.location.search.toLowerCase();
       
-      if (path.includes('/admin/login') || hash.includes('admin/login') || hash.includes('admin-login') || search.includes('admin=login')) {
+      const isAdminRoute = 
+        path.includes('/admin/login') || 
+        path.endsWith('/admin') ||
+        path === '/admin' ||
+        hash.includes('admin/login') || 
+        hash.includes('admin-login') || 
+        hash.includes('#admin') ||
+        hash === '#admin' ||
+        search.includes('admin=login') || 
+        search.includes('admin=true') ||
+        search.includes('admin');
+
+      if (isAdminRoute) {
         setIsAdminLoginOpen(true);
       } else if (path.includes('/earlyaccess') || hash.includes('earlyaccess') || hash.includes('early-access') || search.includes('page=earlyaccess') || search.includes('earlyaccess')) {
         setCurrentView('earlyaccess');
@@ -43,7 +55,7 @@ export default function App() {
     window.addEventListener('hashchange', handleUrlCheck);
     window.addEventListener('popstate', handleUrlCheck);
     
-    // Keyboard shortcut for SaaS Owner: Ctrl + Shift + A / Cmd + Shift + A
+    // Hidden Keyboard shortcut for SaaS Owner: Ctrl + Shift + A / Cmd + Shift + A
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
         e.preventDefault();
@@ -137,7 +149,6 @@ export default function App() {
           onViewChange={handleNavigateView} 
           onOpenSignIn={(tab) => handleOpenSignIn(tab || 'seller')}
           onOpenSignUp={(tab) => handleOpenSignUp(tab || 'seller')}
-          onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
           currentUserRole={currentUserRole}
           activeMerchant={activeMerchant}
           activeAffiliate={activeAffiliate}
@@ -152,7 +163,6 @@ export default function App() {
             onStartSeller={() => handleOpenSignUp('seller')}
             onStartPromoter={() => handleOpenSignUp('promoter')}
             onNavigateToAffiliate={() => handleOpenSignIn('promoter')}
-            onNavigateToAdmin={() => setIsAdminLoginOpen(true)}
             onNavigateToMerchant={() => handleOpenSignIn('seller')}
             onNavigateToEarlyAccess={() => handleNavigateView('earlyaccess')}
             onSelectMerchant={handleSelectMerchant}
@@ -173,7 +183,6 @@ export default function App() {
               setCurrentUserRole('AFFILIATE');
               setCurrentView('affiliate');
             }}
-            onSwitchToAdminView={() => setIsAdminLoginOpen(true)}
           />
         )}
 
@@ -203,16 +212,17 @@ export default function App() {
         initialMode={authModalMode}
         onLoginSeller={handleLoginSeller}
         onLoginPromoter={handleLoginPromoter}
-        onOpenAdminLogin={() => {
-          setIsAuthModalOpen(false);
-          setIsAdminLoginOpen(true);
-        }}
       />
 
-      {/* Hidden SaaS Owner Admin Login (/admin/login) */}
+      {/* Hidden SaaS Owner Admin Login (Accessible strictly via direct link /admin/login) */}
       <AdminLoginModal 
         isOpen={isAdminLoginOpen}
-        onClose={() => setIsAdminLoginOpen(false)}
+        onClose={() => {
+          setIsAdminLoginOpen(false);
+          if (window.location.hash.includes('admin')) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          }
+        }}
         onLoginSuccess={handleLoginAdmin}
       />
 
