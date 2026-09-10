@@ -100,7 +100,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   ];
   const [currentFeedIndex, setCurrentFeedIndex] = useState(0);
 
-  // Auto-increment live moving numbers rapidly (every 720ms) to catch user attention
+  // Auto-increment live moving numbers rapidly (every 400ms) to catch user attention
   useEffect(() => {
     let tickCount = 0;
     const interval = setInterval(() => {
@@ -110,51 +110,51 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       setLiveStats(prev => {
         const next = { ...prev };
         
-        // Seller increments: clicks tick almost every cycle (85% of ticks)
-        if (randomTrigger > 0.15) {
-          const clickAdd = Math.floor(Math.random() * 4) + 1;
+        // Seller increments: clicks tick almost every cycle (90% of ticks)
+        if (randomTrigger > 0.10) {
+          const clickAdd = Math.floor(Math.random() * 5) + 2;
           next.sellerClicks += clickAdd;
           setSellerClickDelta(clickAdd);
           setClickPulse(true);
-          setTimeout(() => setClickPulse(false), 450);
+          setTimeout(() => setClickPulse(false), 280);
         }
 
-        // Seller leads: tick frequently (every 1.4s)
-        if (randomTrigger > 0.48) {
+        // Seller leads: tick frequently (~every 800ms-1s)
+        if (randomTrigger > 0.38) {
           next.sellerLeads += 1;
-          const commissionAdd = Math.floor(Math.random() * 45) + 20; // 20 to 65 MAD per lead
+          const commissionAdd = Math.floor(Math.random() * 55) + 25; // 25 to 80 MAD per lead
           next.sellerRevenueMAD += commissionAdd;
           setSellerLeadDelta(1);
           setSellerRevDelta(commissionAdd);
           setPulsingStat('seller-lead');
           setCurrentFeedIndex(i => (i + 1) % liveFeedPool.length);
-          setTimeout(() => setPulsingStat(null), 500);
+          setTimeout(() => setPulsingStat(null), 320);
         }
 
         // Occasionally increment active affiliates count
-        if (tickCount % 12 === 0) {
+        if (tickCount % 8 === 0) {
           next.sellerAffiliates += 1;
         }
         
         // Promoter increments: rapid clicks & conversions
-        if (randomTrigger > 0.2) {
-          const pClickAdd = Math.floor(Math.random() * 3) + 1;
+        if (randomTrigger > 0.15) {
+          const pClickAdd = Math.floor(Math.random() * 4) + 1;
           next.promoterClicks += pClickAdd;
           setPromoterClickDelta(pClickAdd);
         }
-        if (randomTrigger > 0.5) {
+        if (randomTrigger > 0.42) {
           next.promoterLeads += 1;
           const earningAdd = Math.floor(Math.random() * 50) + 25;
           next.promoterEarningsMAD += earningAdd;
           setPromoterLeadDelta(1);
           setPromoterRevDelta(earningAdd);
           setPulsingStat('promoter-lead');
-          setTimeout(() => setPulsingStat(null), 500);
+          setTimeout(() => setPulsingStat(null), 320);
         }
         
         return next;
       });
-    }, 720);
+    }, 400);
 
     return () => clearInterval(interval);
   }, []);
@@ -239,17 +239,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* Localized Headline */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[66px] font-extrabold text-slate-950 tracking-tight leading-[1.15] max-w-4xl mx-auto mb-6">
-            {isAr ? 'ضاعف مبيعات متجرك عبر التسويق بالعمولة' : 'Boostez vos ventes e-commerce par l\'affiliation'}{' '}
+            {t('hero.title1')}{' '}
             <span className="text-blue-600 underline decoration-blue-200 underline-offset-8">
-              {isAr ? 'في المغرب' : 'au Maroc'}
+              {t('hero.titleHighlight')}
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-lg sm:text-xl text-slate-600 max-w-3xl mx-auto mb-10 leading-relaxed font-normal">
-            {isAr 
-              ? 'اربط متجرك (YouCan، Shopify، WooCommerce) بصناع المحتوى المعتمدين. ادفع العمولة فقط عندما يصل الزبون إلى صفحة الشكر (Thank You Page).' 
-              : 'Connectez votre boutique (YouCan, Shopify, WooCommerce) à des créateurs de contenu. Ne payez une commission que lorsqu\'un prospect atteint votre Thank You Page.'}
+            {t('hero.subtitle')}
           </p>
 
           {/* Main Action Buttons */}
@@ -278,7 +276,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* Sliding Toggle Control: Left (Promoters) <-> Right (Sellers) */}
             <div className="inline-flex items-center gap-3 p-1.5 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-md mb-5">
               <span className="text-xs font-bold text-slate-500 pl-2 hidden sm:inline">
-                {isAr ? 'عرض لوحة التحكم :' : 'Aperçu Dashboard :'}
+                {t('hero.dashboardPreviewTitle')}
               </span>
 
               {/* Toggle Switcher Container */}
@@ -295,7 +293,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   }`}
                 >
                   <TrendingUp className="w-4 h-4 text-emerald-600" />
-                  <span>{isAr ? 'صناع المحتوى / مسوقين' : 'Espace Promoteurs'}</span>
+                  <span>{t('hero.togglePromoters')}</span>
                 </button>
 
                 {/* Right option: Sellers */}
@@ -310,7 +308,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   }`}
                 >
                   <Building2 className="w-4 h-4 text-blue-600" />
-                  <span>{isAr ? 'أصحاب المتاجر / بائعين' : 'Espace Vendeurs'}</span>
+                  <span>{t('hero.toggleSellers')}</span>
                 </button>
               </div>
 
@@ -337,18 +335,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <div>
                       <div className="flex items-center gap-2.5">
                         <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
-                          {isAr ? 'منصة العمولة والتتبع' : 'Plateforme d’Affiliation & Tracking'}
+                          {t('liveboard.sellerTitle')}
                         </h3>
                         <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full flex items-center gap-1.5">
                           <span className="relative flex h-2 w-2">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                           </span>
-                          {isAr ? 'بيكسل نشط' : 'Pixel Actif'}
+                          {t('liveboard.pixelBadge')}
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        {isAr ? 'تتبع فوري ومباشر لجميع الليدات والمبيعات' : 'Attribution en temps réel 100% automatisée'}
+                        {t('liveboard.sellerSubtitle')}
                       </p>
                     </div>
 
@@ -400,7 +398,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-slate-500">
-                          {isAr ? 'الليدات المؤكدة (صفحة الشكر)' : 'Leads Trackés (Thank You Page)'}
+                          {t('liveboard.cardLeads')}
                         </span>
                         <div className="flex items-center gap-1">
                           {pulsingStat === 'seller-lead' && (
@@ -429,7 +427,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-slate-500">
-                          {isAr ? 'النقرات المؤكدة' : 'Clics Trackés'}
+                          {t('liveboard.cardClicks')}
                         </span>
                         <div className="flex items-center gap-1">
                           {clickPulse && (
@@ -454,7 +452,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-slate-500">
-                          {isAr ? 'المسوقون النشطون' : 'Promoteurs Actifs'}
+                          {t('liveboard.cardAffiliates')}
                         </span>
                         <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
                           +78.9%
@@ -474,7 +472,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-slate-500">
-                          {isAr ? 'العمولات المكتسبة' : 'Commissions Générées'}
+                          {t('liveboard.cardCommissions')}
                         </span>
                         <div className="flex items-center gap-1">
                           {pulsingStat === 'seller-lead' && (
@@ -534,7 +532,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <div>
                       <div className="flex items-center gap-2.5">
                         <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
-                          {isAr ? 'لوحة تحكم المسوق وصانع المحتوى' : 'Espace Promoteurs & Affiliation'}
+                          {t('liveboard.promoterTitle')}
                         </h3>
                         <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full flex items-center gap-1.5">
                           <span className="relative flex h-2 w-2">
@@ -545,7 +543,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        {isAr ? 'أرباحك المباشرة وعمولات كل ليد محقق' : 'Suivi de vos gains directs et retraits bancaires'}
+                        {t('liveboard.promoterSubtitle')}
                       </p>
                     </div>
 
@@ -597,7 +595,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-slate-500">
-                          {isAr ? 'الليدات المحققة' : 'Mes Leads Validés'}
+                          {t('liveboard.cardPromoterLeads')}
                         </span>
                         <div className="flex items-center gap-1">
                           {pulsingStat === 'promoter-lead' && (
@@ -626,7 +624,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-slate-500">
-                          {isAr ? 'النقرات على روابطي' : 'Clics Liens (Bio/Story)'}
+                          {t('liveboard.cardPromoterClicks')}
                         </span>
                         <div className="flex items-center gap-1">
                           {promoterClickDelta > 0 && (
@@ -651,7 +649,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-slate-500">
-                          {isAr ? 'المتاجر والمنتجات المشترك بها' : 'Campagnes Actives'}
+                          {t('liveboard.cardPromoterOffers')}
                         </span>
                         <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
                           {liveStats.promoterActiveOffers} Marques
@@ -671,7 +669,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-slate-500">
-                          {isAr ? 'أرباحي الإجمالية (د.م)' : 'Gains Cumulés (MAD)'}
+                          {t('liveboard.cardPromoterEarnings')}
                         </span>
                         <div className="flex items-center gap-1">
                           {pulsingStat === 'promoter-lead' && (
@@ -763,13 +761,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="text-center max-w-3xl mx-auto mb-12">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-3 border border-blue-200/80 shadow-2xs">
               <Layers className="w-3.5 h-3.5 text-blue-600" />
-              <span>{isAr ? 'كيف يعمل ؟' : 'Comment ça marche ?'}</span>
+              <span>{t('how.badge')}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-950 tracking-tight mb-4">
-              {isAr ? 'نموذج بسيط وسريع: 3 خطوات لبدء مضاعفة الأرباح' : 'Un modèle simple en 3 étapes : générez des leads, encaissez'}
+              {t('how.title')}
             </h2>
             <p className="text-base sm:text-lg text-slate-600">
-              {isAr ? 'اختر دورك واكتشف كيف يعمل نظام التتبع والدفع المباشر' : 'Sélectionnez votre profil pour découvrir le flux 100% automatisé'}
+              {t('how.subtitle')}
             </p>
           </div>
 
@@ -786,7 +784,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 }`}
               >
                 <Building2 className="w-4 h-4" />
-                <span>{isAr ? 'Pour les Vendeurs / أصحاب المتاجر' : 'Pour les Vendeurs / Merchants'}</span>
+                <span>{t('how.sellerTab')}</span>
               </button>
 
               <button
@@ -799,7 +797,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 }`}
               >
                 <TrendingUp className="w-4 h-4" />
-                <span>{isAr ? 'Pour les Affiliés / للمسوقين' : 'Pour les Affiliés / Promoters'}</span>
+                <span>{t('how.promoterTab')}</span>
               </button>
             </div>
           </div>
@@ -818,17 +816,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
                   </div>
                   <h3 className="text-lg font-bold text-slate-950 mb-3">
-                    {isAr ? '1. أنشئ رابطك وحدد عمولتك' : '1. Créez votre lien & fixez votre commission'}
+                    {t('how.sellerStep1.title')}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
-                    {isAr 
-                      ? 'أضف منتجك وحدد بحرية العمولة التي تناسبك: من 5 دراهم إلى أكثر من 200 درهم لكل ليد (أو نسبة مئوية % مخصصة حسب هامش ربحك).'
-                      : 'Définissez librement le montant (de 5 DH à 200+ DH par Lead) ou un % personnalisé selon vos marges sur chaque produit.'}
+                    {t('how.sellerStep1.desc')}
                   </p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs font-bold text-blue-600 flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{isAr ? 'عمولة مرنة: 5 DH إلى 200+ DH / Lead' : 'Commissions libres de 5 DH à 200+ DH'}</span>
+                  <span>{t('how.sellerStep1.tag')}</span>
                 </div>
               </div>
 
@@ -842,17 +838,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
                   </div>
                   <h3 className="text-lg font-bold text-slate-950 mb-3">
-                    {isAr ? '2. شارك الروابط مع صناع المحتوى' : '2. Partagez avec les promoteurs'}
+                    {t('how.sellerStep2.title')}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
-                    {isAr
-                      ? 'أنشئ روابط أفيلييت فريدة (rkt.ma) بنقرة واحدة وشاركها مباشرة مع المؤثرين وصناع المحتوى ليبدأوا الترويج على تيك توك وإنستغرام.'
-                      : 'Générez des liens d’affiliation uniques en 1-clic pour vos créateurs de contenu afin qu\'ils diffusent sur TikTok & Instagram.'}
+                    {t('how.sellerStep2.desc')}
                   </p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs font-bold text-indigo-600 flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{isAr ? 'روابط تتبع مخصصة وسريعة rkt.ma' : 'Liens courts traqués rkt.ma'}</span>
+                  <span>{t('how.sellerStep2.tag')}</span>
                 </div>
               </div>
 
@@ -866,17 +860,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
                   </div>
                   <h3 className="text-lg font-bold text-slate-950 mb-3">
-                    {isAr ? '3. ادفع فقط عند صفحة الشكر (Thank You Page)' : '3. Payez uniquement à la Thank You Page'}
+                    {t('how.sellerStep3.title')}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
-                    {isAr
-                      ? 'يسجل البيكسل الليد تلقائياً بمجرد إرسال الزبون للطلب ووصوله لصفحة الشكر. لا تدفع على المشاهدات أو النقرات — 0% ميزانية مهدورة.'
-                      : 'Le Pixel enregistre le Lead dès que le client valide la commande et atteint la page de remerciement. Zéro budget média gaspillé.'}
+                    {t('how.sellerStep3.desc')}
                   </p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs font-bold text-emerald-600 flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{isAr ? '0% مخاطرة إعلانية • دفع على الليد الفعلي' : '0% Risque • Paiement au Lead réel'}</span>
+                  <span>{t('how.sellerStep3.tag')}</span>
                 </div>
               </div>
 
@@ -894,17 +886,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
                   </div>
                   <h3 className="text-lg font-bold text-slate-950 mb-3">
-                    {isAr ? '1. اختر متجراً أو منتجاً' : '1. Choisissez une boutique'}
+                    {t('how.promoterStep1.title')}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
-                    {isAr
-                      ? 'تصفح قائمة العلامات التجارية والمتاجر، وتأكد من قيمة العمولة المحددة من البائع (من 5 إلى أكثر من 200 درهم لكل ليد) واحصل على رابطك الخاص.'
-                      : 'Sélectionnez une marque partenaire, vérifiez la commission fixée par le vendeur (de 5 DH à 200+ DH/lead) et récupérez votre lien personnalisé.'}
+                    {t('how.promoterStep1.desc')}
                   </p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs font-bold text-emerald-600 flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{isAr ? 'عشرات المتاجر المغربية الجاهزة' : 'Marques e-commerce actives'}</span>
+                  <span>{t('how.promoterStep1.tag')}</span>
                 </div>
               </div>
 
@@ -918,17 +908,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
                   </div>
                   <h3 className="text-lg font-bold text-slate-950 mb-3">
-                    {isAr ? '2. روّج للمنتج مع جمهورك' : '2. Promouvez le produit'}
+                    {t('how.promoterStep2.title')}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
-                    {isAr
-                      ? 'شارك رابطك في البايو على تيك توك، ستوريات إنستغرام، يوتيوب أو عبر مجموعات واتساب وإعلاناتك المباشرة.'
-                      : 'Partagez votre lien traqué avec votre communauté sur TikTok, Instagram, WhatsApp ou via vos propres campagnes sponsorisées.'}
+                    {t('how.promoterStep2.desc')}
                   </p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs font-bold text-blue-600 flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{isAr ? 'روابط متوافقة تماماً مع منصات التواصل' : 'Optimisé Bio Instagram & TikTok'}</span>
+                  <span>{t('how.promoterStep2.tag')}</span>
                 </div>
               </div>
 
@@ -942,17 +930,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
                   </div>
                   <h3 className="text-lg font-bold text-slate-950 mb-3">
-                    {isAr ? '3. احصل على عمولتك مع كل ليد' : '3. Encaissez à chaque Lead'}
+                    {t('how.promoterStep3.title')}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
-                    {isAr
-                      ? 'اربح العمولة المحددة فور وصول العميل لصفحة الشكر (Thank You Page). اسحب أرباحك في أي وقت مباشرة إلى حسابك البنكي المغربي RIB.'
-                      : 'Gagnez la commission fixée par le vendeur à chaque "Thank You Page" atteinte. Retrait rapide direct vers votre compte bancaire marocain (RIB).'}
+                    {t('how.promoterStep3.desc')}
                   </p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-slate-200/60 text-xs font-bold text-purple-600 flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{isAr ? 'تحويل بنكي مباشر (CIH, Attijari, BCP)' : 'Paiements directs RIB en Dirhams'}</span>
+                  <span>{t('how.promoterStep3.tag')}</span>
                 </div>
               </div>
 
@@ -971,13 +957,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="text-center max-w-3xl mx-auto mb-14">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-3 border border-blue-200/80 shadow-2xs">
               <Scale className="w-3.5 h-3.5 text-blue-600" />
-              <span>{isAr ? 'مقارنة الأداء والفعالية' : 'Comparatif de Performance'}</span>
+              <span>{t('compare.badge')}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-950 tracking-tight mb-4">
-              {isAr ? 'RoketLead مقابل إعلانات Meta Ads (فيسبوك وإنستغرام)' : 'RoketLead vs Meta Ads (Facebook & Instagram)'}
+              {t('compare.title')}
             </h2>
             <p className="text-base sm:text-lg text-slate-600">
-              {isAr ? 'لماذا يعد التسويق بالعمولة على صفحة الشكر البديل الأكثر أماناً وربحية لمتجرك في المغرب' : 'Pourquoi payer pour des clics inutiles quand vous pouvez payer uniquement au résultat ?'}
+              {t('compare.subtitle')}
             </p>
           </div>
 
@@ -987,15 +973,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* Table Header */}
             <div className="grid grid-cols-1 md:grid-cols-12 bg-slate-900 text-white p-6 sm:p-8 items-center border-b border-slate-800">
               <div className="md:col-span-4 text-slate-300 font-bold text-sm uppercase tracking-wider mb-2 md:mb-0">
-                {isAr ? 'معيار المقارنة والتكلفة' : 'Critères de Rentabilité'}
+                {t('compare.colCriteria')}
               </div>
               <div className="md:col-span-4 text-rose-400 font-extrabold text-base flex items-center gap-2 mb-2 md:mb-0">
                 <span className="p-1 rounded-lg bg-rose-500/20 text-rose-400">❌</span>
-                <span>Meta Ads (Facebook / Instagram)</span>
+                <span>{t('compare.colMeta')}</span>
               </div>
               <div className="md:col-span-4 text-blue-400 font-extrabold text-base flex items-center gap-2">
                 <span className="p-1 rounded-lg bg-blue-500/20 text-blue-400">🚀</span>
-                <span>RoketLead (Affiliation au Lead)</span>
+                <span>{t('compare.colRoket')}</span>
               </div>
             </div>
 
@@ -1005,83 +991,81 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               {/* Row 1: CPM */}
               <div className="grid grid-cols-1 md:grid-cols-12 p-6 sm:p-7 items-center hover:bg-slate-50/80 transition-colors gap-3 md:gap-0">
                 <div className="md:col-span-4">
-                  <span className="font-extrabold text-slate-900 block text-base">CPM (Coût par 1 000 Impressions)</span>
+                  <span className="font-extrabold text-slate-900 block text-base">{t('compare.cpmTitle')}</span>
                   <span className="text-xs text-slate-500">{isAr ? 'تكلفة ظهور الإعلان لـ 1000 شخص' : 'Affichage des publicités sans garantie de vente'}</span>
                 </div>
                 <div className="md:col-span-4 text-slate-700 flex items-center gap-2">
                   <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
-                  <span>{isAr ? 'تدفع على المشاهدات حتى لو لم يشتر أحد' : 'Payez pour des vues sans garantie d’achat'}</span>
+                  <span>{t('compare.cpmMeta')}</span>
                 </div>
                 <div className="md:col-span-4 font-bold text-blue-600 flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                  <span className="text-base font-extrabold">{isAr ? '0 درهم (مشاهدات مجانية)' : '0 DH (Impressions 100% Gratuites)'}</span>
+                  <span className="text-base font-extrabold">{t('compare.cpmRoket')}</span>
                 </div>
               </div>
 
               {/* Row 2: CPC */}
               <div className="grid grid-cols-1 md:grid-cols-12 p-6 sm:p-7 items-center hover:bg-slate-50/80 transition-colors bg-slate-50/30 gap-3 md:gap-0">
                 <div className="md:col-span-4">
-                  <span className="font-extrabold text-slate-900 block text-base">CPC (Coût par Clic)</span>
+                  <span className="font-extrabold text-slate-900 block text-base">{t('compare.cpcTitle')}</span>
                   <span className="text-xs text-slate-500">{isAr ? 'تكلفة النقرات العشوائية' : 'Visiteurs qui quittent votre boutique en 3s'}</span>
                 </div>
                 <div className="md:col-span-4 text-slate-700 flex items-center gap-2">
                   <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
-                  <span>{isAr ? 'تدفع على النقرات غير المجدية أو الخاطئة' : 'Payez pour des clics inutiles ou accidentels'}</span>
+                  <span>{t('compare.cpcMeta')}</span>
                 </div>
                 <div className="md:col-span-4 font-bold text-blue-600 flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                  <span className="text-base font-extrabold">{isAr ? '0 درهم (زيارات وترافيك مجاني)' : '0 DH (Trafic 100% Gratuit)'}</span>
+                  <span className="text-base font-extrabold">{t('compare.cpcRoket')}</span>
                 </div>
               </div>
 
               {/* Row 3: CPA & Risk */}
               <div className="grid grid-cols-1 md:grid-cols-12 p-6 sm:p-7 items-center hover:bg-slate-50/80 transition-colors gap-3 md:gap-0">
                 <div className="md:col-span-4">
-                  <span className="font-extrabold text-slate-900 block text-base">CPA & Risque Financier</span>
+                  <span className="font-extrabold text-slate-900 block text-base">{t('compare.cpaTitle')}</span>
                   <span className="text-xs text-slate-500">{isAr ? 'المخاطرة بميزانيتك الإعلانية' : 'Gaspillage de budget sans retour garanti'}</span>
                 </div>
                 <div className="md:col-span-4 text-slate-700 flex items-center gap-2">
                   <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
-                  <span>{isAr ? '100% مخاطرة عليك إذا لم تنجح الحملة' : '100% du risque sur votre trésorerie'}</span>
+                  <span>{t('compare.cpaMeta')}</span>
                 </div>
                 <div className="md:col-span-4 font-bold text-emerald-600 flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                  <span className="text-base font-extrabold">{isAr ? '0% مخاطرة (دفع فقط على الليد المحقق)' : '0% Risque (Paiement au Lead validé)'}</span>
+                  <span className="text-base font-extrabold">{t('compare.cpaRoket')}</span>
                 </div>
               </div>
 
               {/* Row 4: Taxe Publicitaire (TVA) */}
               <div className="grid grid-cols-1 md:grid-cols-12 p-6 sm:p-7 items-center hover:bg-slate-50/80 transition-colors bg-slate-50/30 gap-3 md:gap-0">
                 <div className="md:col-span-4">
-                  <span className="font-extrabold text-slate-900 block text-base">Taxe Pub / TVA Publicité</span>
-                  <span className="text-xs text-slate-500">{isAr ? 'الضرائب المفروضة على الإعلانات الأجنبية' : 'Taxes sur les budgets publicitaires internationaux'}</span>
+                  <span className="font-extrabold text-slate-900 block text-base">{t('compare.taxTitle')}</span>
+                  <span className="text-xs text-slate-500">{t('compare.taxSub')}</span>
                 </div>
                 <div className="md:col-span-4 text-slate-700 flex items-center gap-2">
                   <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
-                  <span>{isAr ? '+20% ضريبة إعلانات إضافية إجبارية' : 'Taxe publicitaire obligatoire (+20%)'}</span>
+                  <span>{t('compare.taxMeta')}</span>
                 </div>
                 <div className="md:col-span-4 font-bold text-blue-600 flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                  <span className="text-base font-extrabold">{isAr ? '0 درهم ضريبة إعلانات إضافية' : '0 DH de taxe pub supplémentaire'}</span>
+                  <span className="text-base font-extrabold">{t('compare.taxRoket')}</span>
                 </div>
               </div>
 
               {/* Row 5: Déclencheur de Paiement (Trigger) */}
               <div className="grid grid-cols-1 md:grid-cols-12 p-6 sm:p-7 items-center hover:bg-slate-50/80 transition-colors bg-blue-50/30 gap-3 md:gap-0">
                 <div className="md:col-span-4">
-                  <span className="font-extrabold text-slate-900 block text-base">Condition de Paiement</span>
-                  <span className="text-xs text-slate-500">{isAr ? 'متى يخرج المال من جيبك ؟' : 'Moment exact du prélèvement'}</span>
+                  <span className="font-extrabold text-slate-900 block text-base">{t('compare.triggerTitle')}</span>
+                  <span className="text-xs text-slate-500">{t('compare.triggerSub')}</span>
                 </div>
                 <div className="md:col-span-4 text-slate-700 flex items-center gap-2">
                   <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
-                  <span>{isAr ? 'تدفع مقدماً لـ Meta قبل رؤية أي نتيجة' : 'Payez d\'avance à Meta avant tout résultat'}</span>
+                  <span>{t('compare.triggerMeta')}</span>
                 </div>
                 <div className="md:col-span-4 font-bold text-blue-700 flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                   <span className="text-sm font-extrabold">
-                    {isAr 
-                      ? 'خلص غير فاش يوصل الزبون لـ Thank You Page' 
-                      : 'Payez UNIQUEMENT quand un Lead atteint votre Thank You Page'}
+                    {t('compare.triggerRoket')}
                   </span>
                 </div>
               </div>
@@ -1095,7 +1079,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               onClick={onStartSeller || onNavigateToMerchant || onNavigateToAffiliate}
               className="px-8 py-3.5 text-sm sm:text-base font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg shadow-blue-600/30 transition-all cursor-pointer inline-flex items-center gap-2"
             >
-              <span>{isAr ? 'ابدأ التسويق بدون مخاطرة مع روكيت ليد' : 'Passer à l’Affiliation RoketLead sans Risque'}</span>
+              <span>{t('compare.ctaButton')}</span>
               <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
             </button>
           </div>
@@ -1235,7 +1219,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               onClick={onNavigateToAffiliate}
               className="px-7 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow-md shadow-blue-600/30 transition-all cursor-pointer inline-flex items-center gap-2"
             >
-              <span>{isAr ? 'عرض جميع العروض والانضمام كمسوق' : 'Explorer toutes les offres disponibles'}</span>
+              <span>{t('market.exploreAll')}</span>
               <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
             </button>
           </div>
@@ -1258,15 +1242,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <Calculator className="w-5 h-5" />
                 </div>
                 <span className="text-xs font-bold uppercase tracking-wider text-blue-400">
-                  {isAr ? 'محاكي نمو المبيعات بالدرهم المغربي' : 'Simulateur de Croissance Chiffre d’Affaires MAD'}
+                  {t('simulator.badge')}
                 </span>
               </div>
 
               <h3 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">
-                {isAr ? 'قدّر أرباحك ومبيعاتك الإضافية عبر شبكة المسوقين' : 'Estimez votre chiffre d’affaires additionnel avec RoketLead'}
+                {t('simulator.title')}
               </h3>
               <p className="text-slate-400 text-sm mb-10">
-                {isAr ? 'حرّك المؤشرات لمعرفة الحجم الشهري المتوقع بالدرهم المغربي.' : 'Ajustez les curseurs ci-dessous pour simuler votre volume mensuel en Dirhams (MAD).'}
+                {t('simulator.subtitle')}
               </p>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -1278,7 +1262,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
                     <div className="flex justify-between items-center mb-2">
                       <label className="text-sm font-medium text-slate-300">
-                        {isAr ? 'عدد المسوقين والمؤثرين النشطين' : 'Promoteurs & Créateurs actifs'}
+                        {t('simulator.sliderAffiliates')}
                       </label>
                       <span className="text-lg font-bold text-blue-400">
                         {affiliateCount} {isAr ? 'مسوق' : 'créateurs'}
@@ -1299,7 +1283,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
                     <div className="flex justify-between items-center mb-2">
                       <label className="text-sm font-medium text-slate-300">
-                        {isAr ? 'متوسط قيمة السلة (AOV)' : 'Panier Moyen (AOV)'}
+                        {t('simulator.sliderAOV')}
                       </label>
                       <span className="text-lg font-bold text-emerald-400">
                         {avgOrderValueMAD.toLocaleString()} {isAr ? 'د.م' : 'MAD'}
@@ -1320,7 +1304,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
                     <div className="flex justify-between items-center mb-2">
                       <label className="text-sm font-medium text-slate-300">
-                        {isAr ? 'متوسط الليدات والمبيعات لكل مسوق / شهر' : 'Leads générés par promoteur / mois'}
+                        {t('simulator.sliderSales')}
                       </label>
                       <span className="text-lg font-bold text-purple-400">
                         {salesPerAffiliateMonth} {isAr ? 'ليد' : 'leads'}
@@ -1342,7 +1326,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 {/* Calculation Output Card */}
                 <div className="lg:col-span-5 bg-white/10 backdrop-blur-md rounded-2xl p-7 border border-white/20 text-center">
                   <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider block mb-1">
-                    {isAr ? 'إجمالي مبيعات الإحالة الشهرية المتوقعة' : 'Volume Mensuel Affiliation Estimé (GMV)'}
+                    {t('simulator.resultVolume')}
                   </span>
                   <div className="text-3xl sm:text-4xl font-extrabold text-white mb-2">
                     {estimatedMonthlyVolumeMAD.toLocaleString()} <span className="text-sm font-bold text-blue-300">{isAr ? 'د.م' : 'MAD'}</span>
@@ -1366,7 +1350,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     onClick={onStartSeller || onNavigateToMerchant || onNavigateToAffiliate}
                     className="w-full py-3 text-sm font-bold text-slate-950 bg-white hover:bg-slate-100 rounded-xl shadow-lg transition-all cursor-pointer"
                   >
-                    {isAr ? 'إطلاق برنامجك الآن' : 'Lancer le Programme Vendeur'}
+                    {t('simulator.btnCta')}
                   </button>
                 </div>
 
@@ -1402,7 +1386,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="lg:col-span-5 space-y-6">
               <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200/80 space-y-4">
                 <h4 className="text-base font-bold text-slate-950 mb-2">
-                  {isAr ? 'قنوات التواصل المباشر' : 'Nos Coordonnées Directes'}
+                  {t('contact.channelsTitle')}
                 </h4>
 
                 <div className="flex items-start gap-3">
@@ -1422,7 +1406,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <Mail className="w-5 h-5" />
                   </div>
                   <div>
-                    <strong className="text-xs text-slate-900 block">{isAr ? 'البريد الإلكتروني الرسمي' : 'Email Support & Partenariats'}</strong>
+                    <strong className="text-xs text-slate-900 block">{t('contact.emailLabel')}</strong>
                     <a href="mailto:contact@roketlead.ma" className="text-sm font-semibold text-blue-600 hover:underline">
                       contact@roketlead.ma
                     </a>
@@ -1434,7 +1418,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <MapPin className="w-5 h-5" />
                   </div>
                   <div>
-                    <strong className="text-xs text-slate-900 block">{isAr ? 'المقر الرئيسي بالمغرب' : 'Siège Social'}</strong>
+                    <strong className="text-xs text-slate-900 block">{t('contact.officeLabel')}</strong>
                     <p className="text-xs text-slate-600">
                       {t('contact.office')}
                     </p>
@@ -1444,9 +1428,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
               {/* Office hours box */}
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-3xl border border-blue-100">
-                <h5 className="text-xs font-bold text-slate-900 mb-1">{isAr ? 'ساعات العمل والمواكبة' : 'Horaires du Support'}</h5>
+                <h5 className="text-xs font-bold text-slate-900 mb-1">{t('contact.officeHoursTitle')}</h5>
                 <p className="text-xs text-slate-600">
-                  {isAr ? 'من الإثنين إلى الجمعة : 09:00 - 18:30 (توقيت المغرب GMT+1)' : 'Du Lundi au Vendredi : 09h00 - 18h30 (Heure de Casablanca)'}
+                  {t('contact.officeHoursDesc')}
                 </p>
               </div>
             </div>
@@ -1569,12 +1553,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 roketlead<span className="text-blue-600">.</span>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed mb-4">
-                {isAr 
-                  ? 'المنصة الرائدة لتسويق الإحالة والتسويق بالعمولة في المغرب، لمساعدة البائعين على مضاعفة مبيعاتهم ومساعدة صناع المحتوى على كسب أعلى العمولات.'
-                  : 'La plateforme de référence pour le marketing d’affiliation au Maroc, conçue pour accélérer les ventes des boutiques et maximiser les commissions des créateurs.'}
+                {t('footer.desc')}
               </p>
               <div className="text-xs text-slate-400">
-                Casablanca Marina Business Tower • Rabat Agdal
+                {t('footer.location')}
               </div>
             </div>
 
@@ -1582,7 +1564,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 text-xs">
               <div>
                 <div className="font-bold text-slate-900 mb-3 uppercase tracking-wider text-[11px]">
-                  {isAr ? 'المنصة' : 'Plateforme'}
+                  {t('footer.colPlatform')}
                 </div>
                 <ul className="space-y-2 text-slate-600">
                   <li><button onClick={onNavigateToMerchant} className="hover:text-blue-600 cursor-pointer">{t('nav.forSellers')}</button></li>
@@ -1594,7 +1576,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
               <div>
                 <div className="font-bold text-slate-900 mb-3 uppercase tracking-wider text-[11px]">
-                  {isAr ? 'التكامل والربط' : 'Intégrations'}
+                  {t('footer.colIntegrations')}
                 </div>
                 <ul className="space-y-2 text-slate-600">
                   <li><span>YouCan.shop App</span></li>
@@ -1606,7 +1588,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
               <div>
                 <div className="font-bold text-slate-900 mb-3 uppercase tracking-wider text-[11px]">
-                  {isAr ? 'الدعم الفني' : 'Support'}
+                  {t('footer.colSupport')}
                 </div>
                 <ul className="space-y-2 text-slate-600">
                   <li><a href="#section-contact" className="hover:text-blue-600">{t('nav.contact')}</a></li>

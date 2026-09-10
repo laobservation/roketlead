@@ -28,7 +28,8 @@ import {
   ArrowDownRight,
   Truck,
   ExternalLink,
-  Settings
+  Settings,
+  FileText
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -47,6 +48,8 @@ import {
 import { MerchantProfile, SystemAuditLog, Conversion } from '../types';
 import { INITIAL_MERCHANTS, INITIAL_AUDIT_LOGS, INITIAL_CONVERSIONS } from '../data/mockData';
 import { StoreLogo } from './StoreLogo';
+import { AdminContentEditor } from './AdminContentEditor';
+import { useLanguage } from '../context/LanguageContext';
 
 const REVENUE_TIMELINE_DATA = [
   { day: 'Mon', gmv: 42000, saasCut: 2100, deliveredOrders: 84 },
@@ -71,10 +74,11 @@ interface SuperAdminDashboardProps {
 }
 
 export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSwitchToAffiliateView }) => {
+  const { customCount } = useLanguage();
   const [merchants, setMerchants] = useState<MerchantProfile[]>(INITIAL_MERCHANTS);
   const [auditLogs, setAuditLogs] = useState<SystemAuditLog[]>(INITIAL_AUDIT_LOGS);
   const [conversions, setConversions] = useState<Conversion[]>(INITIAL_CONVERSIONS);
-  const [activeTab, setActiveTab] = useState<'overview' | 'merchants' | 'audit' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'merchants' | 'audit' | 'content' | 'settings'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMerchant, setSelectedMerchant] = useState<MerchantProfile | null>(null);
   const [isSimulatingWebhook, setIsSimulatingWebhook] = useState(false);
@@ -239,6 +243,22 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSwit
               }`}
             >
               System Audit Log
+            </button>
+            <button
+              onClick={() => setActiveTab('content')}
+              className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'content' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Éditeur de Textes (CMS)</span>
+              {customCount > 0 && (
+                <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-bold ${
+                  activeTab === 'content' ? 'bg-white text-blue-700' : 'bg-emerald-100 text-emerald-800'
+                }`}>
+                  {customCount}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setActiveTab('settings')}
@@ -791,6 +811,13 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSwit
 
             </div>
           </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 5: CMS & TEXTS CONTENT EDITOR */}
+        {/* ========================================================================= */}
+        {activeTab === 'content' && (
+          <AdminContentEditor onPreviewLiveSite={onSwitchToAffiliateView} />
         )}
 
       </div>
