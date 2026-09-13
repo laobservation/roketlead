@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "roketlead",
     "public": "dist",
     "ignore": [
       "firebase.json",
