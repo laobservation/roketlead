@@ -12,9 +12,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm install && npm run build
-      - name: Deploy to Firebase Hosting
-        run: npx firebase-tools deploy --only hosting --non-interactive --token "$FIREBASE_TOKEN"
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          GCP_ACCESS_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+      - name: Install Dependencies & Build
+        run: npm install && npm run build
+      - name: Deploy to Firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: roketlead
